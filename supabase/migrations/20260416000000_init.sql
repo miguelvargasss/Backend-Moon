@@ -1,6 +1,5 @@
 -- ============================================================
 -- MoonPhases — Migración inicial del esquema de base de datos
--- Proyecto: Tienda web para emprendimiento
 -- Fecha: 2026-04-16
 -- Motor: PostgreSQL (Supabase)
 -- Nota: La tabla "user" referencia auth.users de Supabase Auth
