@@ -1,0 +1,41 @@
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  UseGuards,
+  NotFoundException,
+} from '@nestjs/common';
+import { GetUserProfileUseCase } from './application/get-user-profile.use-case.js';
+import { UpdateUserProfileUseCase } from './application/update-user-profile.use-case.js';
+import { UpdateUserDto } from './dto/update-user.dto.js';
+import { AuthGuard } from '../common/guards/auth.guard.js';
+import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator.js';
+import { ApiResponse } from '../common/dto/api-response.dto.js';
+
+@Controller('users')
+@UseGuards(AuthGuard)
+export class UsersController {
+  constructor(
+    private readonly getUserProfile: GetUserProfileUseCase,
+    private readonly updateUserProfile: UpdateUserProfileUseCase,
+  ) {}
+
+  @Get('profile')
+  async getProfile(@CurrentUser() user: AuthUser) {
+    const profile = await this.getUserProfile.execute(user.userId);
+    if (!profile) {
+      throw new NotFoundException('Perfil de usuario no encontrado');
+    }
+    return ApiResponse.ok(profile);
+  }
+
+  @Patch('profile')
+  async updateProfile(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateUserDto,
+  ) {
+    const updated = await this.updateUserProfile.execute(user.userId, dto);
+    return ApiResponse.ok(updated, 'Perfil actualizado exitosamente');
+  }
+}
