@@ -1,5 +1,8 @@
 # 📘 Documentación del Backend — MoonPhases
 
+El backend sigue una **arquitectura Clean Architecture** (Arquitectura Limpia) con **8 módulos de dominio**, cada uno organizado en 3 capas internas: `domain`, `application` e `infrastructure`.
+
+
 ## 1. Información General
 
 | Item | Detalle |
@@ -134,8 +137,6 @@ Se creó la función RPC en la migración `20260418000000_fix_rpc_and_constraint
 
 Se agregaron constraints `UNIQUE` a `role.nameRole`, `status.nameStatus` y `statusProduct.nameStatusProduct` en la misma migración.
 
-> ⚠️ **Acción requerida:** Ejecutar `supabase db push` para aplicar la nueva migración `20260418000000_fix_rpc_and_constraints.sql`.
-
 ---
 
 ## 6. Variables de Entorno Requeridas
@@ -202,4 +203,140 @@ Se agregaron constraints `UNIQUE` a `role.nameRole`, `status.nameStatus` y `stat
    ├── Vacía carrito
    └── Genera URL WhatsApp
 5. Retorna { order, total, discount, whatsappUrl }
+```
+------------------------------------------------------------------------------------
+
+### 1. Shapes a usar
+
+| Elemento | Shape en Draw.io | Ubicación en menú |
+|---|---|---|
+| **Paquete (capa)** | UML → Package | Selecciona la pestaña UML del panel izquierdo |
+| **Sub-paquete** | UML → Package (más pequeño, anidado) | Arrastra dentro del paquete padre |
+| **Componente** | General → Rectangle | Rectángulo simple con nombre |
+| **Base de datos** | General → Cylinder / Database | Forma de cilindro |
+| **Dependencia** | Dashed arrow con punta abierta | Selecciona la flecha → estilo Dashed |
+
+### 2. Colores por Capa
+
+| Capa | Fill (fondo) | Stroke (borde) | Código hex |
+|---|---|---|---|
+| Presentación | Azul claro | Azul | `#DBEAFE` / `#3B82F6` |
+| Seguridad | Gris claro | Gris | `#E5E7EB` / `#6B7280` |
+| Lógica de Negocio | Amarillo claro | Amarillo | `#FEF3C7` / `#F59E0B` |
+| Dominio | Verde claro | Verde | `#D1FAE5` / `#10B981` |
+| Infraestructura | Rojo claro | Rojo | `#FEE2E2` / `#EF4444` |
+| Servicios Externos | Púrpura claro | Púrpura | `#EDE9FE` / `#8B5CF6` |
+
+### 3. Pasos para construir
+
+**Paso 1 — Crear las 5 capas (paquetes UML grandes):**
+- Arrastra 5 shapes "Package" de UML y colócalos de arriba hacia abajo
+- Nombra cada uno: `Capa de Presentación`, `Paquete de Seguridad`, `Capa de Lógica de Negocio`, `Capa de Dominio`, `Capa de Infraestructura`
+- A la derecha coloca un 6to paquete: `Servicios Externos`
+
+**Paso 2 — Dentro de Capa de Presentación:**
+- Arrastra 8 paquetes pequeños dentro, nombrados: Auth, Users, Products, Categories, Cart, Coupons, Shipping, Orders
+- Dentro de cada uno pon rectángulos con los nombres: Controller y DTOs
+
+**Paso 3 — Dentro de Paquete de Seguridad:**
+- Coloca 5 rectángulos: AuthGuard, RolesGuard, @Roles, @CurrentUser, ApiResponse
+
+**Paso 4 — Dentro de Capa de Lógica de Negocio:**
+- Arrastra 8 sub-paquetes: Subsistema de Autenticación, Subsistema de Usuarios, etc.
+- Dentro de cada uno lista los Use Cases como rectángulos
+
+**Paso 5 — Dentro de Capa de Dominio:**
+- Arrastra 8 sub-paquetes: Paquete Auth, Paquete User, etc.
+- Dentro pon las entidades y las interfaces (IRepository)
+
+**Paso 6 — Dentro de Capa de Infraestructura:**
+- 3 sub-paquetes: Repositorios, Supabase, Errores
+- En Repositorios lista los 8 SupabaseRepository
+- En Supabase pon: SupabaseService, client, adminClient
+- En Errores pon: throwSupabaseError
+
+**Paso 7 — Servicios Externos:**
+- 4 sub-paquetes: Base de Datos (cilindro PostgreSQL), Autenticación (Supabase Auth), Almacenamiento (Supabase Storage), Mensajería (WhatsApp)
+
+**Paso 8 — Flechas de dependencia:**
+- Usa **flechas discontinuas** (dashed) con punta abierta entre capas:
+  - `Presentación` - - - → `Seguridad` (usa)
+  - `Presentación` - - - → `Lógica de Negocio` (depende de)
+  - `Lógica de Negocio` - - - → `Dominio` (depende de)
+  - `Infraestructura` - - - → `Dominio` (implementa)
+  - `Infraestructura` - - - → `Servicios Externos` (conecta con)
+
+### 4. Layout recomendado (tamaño canvas 1920x1400)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Capa de Presentación                         │
+│  ┌──────┐ ┌──────┐ ┌────────┐ ┌──────────┐                    │
+│  │ Auth │ │Users │ │Products│ │Categories│                     │
+│  └──────┘ └──────┘ └────────┘ └──────────┘                     │
+│  ┌──────┐ ┌───────┐ ┌────────┐ ┌──────┐                       │
+│  │ Cart │ │Coupons│ │Shipping│ │Orders│                        │
+│  └──────┘ └───────┘ └────────┘ └──────┘                        │
+└────────────────────────┬────────────────────────────────────────┘
+          ┌──────────────┤                    ┌───────────────────┐
+          │         - - -▼- - - - - - - - -   │Paquete Seguridad  │
+          │                                   │ AuthGuard         │
+          │                                   │ RolesGuard        │
+          │                                   │ @Roles            │
+          │                                   │ @CurrentUser      │
+          │                                   │ ApiResponse       │
+          │                                   └───────────────────┘
+     - - -▼- - - - - -
+┌─────────────────────────────────────────────────────────────────┐
+│               Capa de Lógica de Negocio                        │
+│  ┌──────────────┐ ┌────────────┐ ┌──────────────┐             │
+│  │Subsistema    │ │Subsistema  │ │Subsistema    │             │
+│  │Autenticación │ │Usuarios    │ │Productos     │             │
+│  └──────────────┘ └────────────┘ └──────────────┘             │
+│  ┌──────────────┐ ┌────────────┐ ┌──────────────┐             │
+│  │Subsistema    │ │Subsistema  │ │Subsistema    │             │
+│  │Carrito       │ │Cupones     │ │Envíos        │             │
+│  └──────────────┘ └────────────┘ └──────────────┘             │
+│  ┌──────────────┐ ┌────────────┐                              │
+│  │Subsistema    │ │Subsistema  │                              │
+│  │Órdenes       │ │Categorías  │                              │
+│  └──────────────┘ └────────────┘                              │
+└────────────────────────┬────────────────────────────────────────┘
+                    - - -▼- - - - - -
+┌─────────────────────────────────────────────────────────────────┐
+│                     Capa de Dominio                             │
+│  ┌────────┐ ┌──────┐ ┌────────┐ ┌──────────┐ ┌───────┐       │
+│  │  Auth  │ │ User │ │Product │ │ Category │ │  Cart │       │
+│  └────────┘ └──────┘ └────────┘ └──────────┘ └───────┘       │
+│  ┌────────┐ ┌────────┐ ┌───────┐                              │
+│  │ Coupon │ │Shipping│ │ Order │                               │
+│  └────────┘ └────────┘ └───────┘                               │
+└───────────────────────────┬─────────────────────────────────────┘
+                     - - - -▲- - - - (implementa)
+┌───────────────────────────┴─────────────────────────────────────┐
+│                  Capa de Infraestructura                        │
+│  ┌──────────────────────┐ ┌──────────────┐ ┌────────────────┐  │
+│  │Paquete Repositorios  │ │Paq. Supabase │ │Paq. de Errores │  │
+│  │  SupabaseAuthRepo    │ │SupabaseServic│ │throwSupabaseErr│  │
+│  │  SupabaseUserRepo    │ │  client      │ └────────────────┘  │
+│  │  SupabaseProductRepo │ │  adminClient │                     │
+│  │  SupabaseCategoryRepo│ └──────┬───────┘                     │
+│  │  SupabaseCartRepo    │        │                             │
+│  │  SupabaseCouponRepo  │        │                             │
+│  │  SupabaseShippingRepo│        │                             │
+│  │  SupabaseOrderRepo   │        │                             │
+│  └──────────────────────┘        │                             │
+└──────────────────────────────────┼─────────────────────────────┘
+                              - - -▼- - - -
+                    ┌──────────────────────────────┐
+                    │      Servicios Externos       │
+                    │ ┌──────────┐ ┌─────────────┐ │
+                    │ │PostgreSQL│ │Supabase Auth│ │
+                    │ │ Supabase │ │    JWT      │ │
+                    │ └──────────┘ └─────────────┘ │
+                    │ ┌──────────┐ ┌─────────────┐ │
+                    │ │ Storage  │ │  WhatsApp   │ │
+                    │ │ Bucket   │ │    API      │ │
+                    │ └──────────┘ └─────────────┘ │
+                    └──────────────────────────────┘
 ```
