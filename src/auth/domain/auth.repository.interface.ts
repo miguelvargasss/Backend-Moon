@@ -20,6 +20,7 @@ export interface IAuthRepository {
     email: string,
     password: string,
     metadata: { Name: string; LastName: string },
+    role?: string,
   ): Promise<{ userId: string }>;
   logout(accessToken: string): Promise<void>;
   refreshSession(refreshToken: string): Promise<{ accessToken: string }>;

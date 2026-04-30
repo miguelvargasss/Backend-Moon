@@ -38,7 +38,7 @@ export class AuthController {
     const result = await this.registerUseCase.execute(dto.email, dto.password, {
       Name: dto.name,
       LastName: dto.lastName,
-    });
+    }, dto.role);
     return ApiResponse.created(result, 'Usuario registrado exitosamente');
   }
 

@@ -58,6 +58,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
     email: string,
     password: string,
     metadata: { Name: string; LastName: string },
+    role?: string,
   ) {
     // 1. Verificar si el email ya existe en la tabla 'user' (detección temprana)
     const { data: existingProfile } = await this.supabase.adminClient
@@ -99,16 +100,17 @@ export class SupabaseAuthRepository implements IAuthRepository {
     const userId = data.user.id;
 
     try {
-      // 3. Obtener el IdRole del rol 'comprador'
+      // 3. Obtener el IdRole del rol solicitado (por defecto 'comprador')
+      const roleName = role ?? 'comprador';
       const { data: roleData, error: roleError } = await this.supabase.adminClient
         .from('role')
         .select('IdRole')
-        .eq('nameRole', 'comprador')
+        .eq('nameRole', roleName)
         .single();
 
       if (roleError || !roleData) {
         throw new InternalServerErrorException(
-          'No se encontró el rol comprador en la base de datos',
+          `No se encontró el rol '${roleName}' en la base de datos`,
         );
       }
 
