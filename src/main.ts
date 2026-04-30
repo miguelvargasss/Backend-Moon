@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -13,6 +14,9 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   });
+
+  // Filtro global — respuestas de error uniformes en formato ApiResponse
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Validación global de DTOs
   app.useGlobalPipes(
@@ -28,3 +32,4 @@ async function bootstrap() {
   logger.log(`🚀 Backend MoonPhases corriendo en: http://localhost:${port}`);
 }
 bootstrap();
+
