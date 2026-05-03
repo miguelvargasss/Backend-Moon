@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import type { IProductRepository } from '../domain/product.repository.interface.js';
+import type { IProductRepository, CreateProductData } from '../domain/product.repository.interface.js';
 import { PRODUCT_REPOSITORY } from '../domain/product.repository.interface.js';
-import { Product } from '../domain/product.entity.js';
+import type { CreateVariantDto } from '../dto/create-product.dto.js';
 
 @Injectable()
 export class UpdateProductUseCase {
@@ -12,12 +12,31 @@ export class UpdateProductUseCase {
 
   async execute(
     id: string,
-    data: Partial<Omit<Product, 'id' | 'isInStock' | 'images'>>,
+    data: Partial<CreateProductData> & { variants?: CreateVariantDto[] },
   ) {
     const existing = await this.productRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('Producto no encontrado');
     }
-    return this.productRepository.update(id, data);
+
+    // 1. Actualizar datos base del producto
+    const { variants, ...productData } = data;
+    await this.productRepository.update(id, productData);
+
+    // 2. Si se enviaron variantes, reemplazar todas (delete + recreate)
+    if (variants !== undefined) {
+      await this.productRepository.deleteAllVariants(id);
+      for (const variant of variants) {
+        await this.productRepository.createVariant(id, {
+          size: variant.size,
+          color: variant.color,
+          stock: variant.stock,
+          priceOverride: variant.priceOverride,
+        });
+      }
+    }
+
+    // 3. Retornar producto completo
+    return this.productRepository.findById(id);
   }
 }

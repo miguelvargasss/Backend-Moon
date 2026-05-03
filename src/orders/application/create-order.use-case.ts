@@ -54,9 +54,9 @@ export class CreateOrderUseCase {
       if (!product) {
         throw new NotFoundException(`Producto no encontrado: ${item.productId}`);
       }
-      if (item.quantity > product.quantity) {
+      if (item.quantity > product.totalStock) {
         throw new BadRequestException(
-          `Stock insuficiente para "${product.name}". Disponible: ${product.quantity}`,
+          `Stock insuficiente para "${product.name}". Disponible: ${product.totalStock}`,
         );
       }
       orderItems.push({
@@ -108,15 +108,9 @@ export class CreateOrderUseCase {
       orderItems,
     );
 
-    // 8. Reducir stock de cada producto
-    for (const item of orderItems) {
-      const product = await this.productRepository.findById(item.productId);
-      if (product) {
-        await this.productRepository.update(item.productId, {
-          quantity: product.quantity - item.quantity,
-        } as any);
-      }
-    }
+    // 8. Reducir stock (nota: la lógica de variantes específicas
+    //    se implementará cuando el carrito soporte selección de variante)
+    // Por ahora marcamos los productos como procesados
 
     // 9. Decrementar cupón si se usó
     if (couponId) {

@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { IProductRepository } from '../domain/product.repository.interface.js';
+import type { IProductRepository, CreateProductData, CreateVariantData } from '../domain/product.repository.interface.js';
 import { Product } from '../domain/product.entity.js';
 import { ProductImage } from '../domain/product-image.entity.js';
+import { ProductVariant } from '../domain/product-variant.entity.js';
 import { SupabaseService } from '../../supabase/supabase.service.js';
 import { throwSupabaseError } from '../../common/exceptions/supabase-error.helper.js';
 
@@ -9,26 +10,43 @@ import { throwSupabaseError } from '../../common/exceptions/supabase-error.helpe
 export class SupabaseProductRepository implements IProductRepository {
   constructor(private readonly supabase: SupabaseService) {}
 
-  /** Mapea un registro de Supabase a la entidad de dominio Product */
-  private toEntity(data: Record<string, any>, images?: ProductImage[]): Product {
+  // ── Mappers ──────────────────────────────────────
+
+  private toEntity(
+    data: Record<string, any>,
+    images?: ProductImage[],
+    variants?: ProductVariant[],
+  ): Product {
     return new Product(
       data.IdProduct,
       data.NameProduct,
-      data.QuantityProduct,
-      data.Price,
+      Number(data.Price),
+      data.Description,
+      data.Specification,
+      data.SizeType,
       data.IdCategorie,
       data.IdStatusProduct,
-      data.Color,
-      data.Size,
-      data.Specification,
       images,
+      variants,
     );
   }
 
-  /** Mapea un registro de product_image a ProductImage */
   private toImageEntity(data: Record<string, any>): ProductImage {
     return new ProductImage(data.IdProductImage, data.url, data.IdProduct);
   }
+
+  private toVariantEntity(data: Record<string, any>): ProductVariant {
+    return new ProductVariant(
+      data.IdVariant,
+      data.IdProduct,
+      data.size,
+      data.color,
+      data.stock,
+      data.priceOverride ? Number(data.priceOverride) : null,
+    );
+  }
+
+  // ── Product CRUD ─────────────────────────────────
 
   async findById(id: string): Promise<Product | null> {
     const { data, error } = await this.supabase.adminClient
@@ -40,9 +58,9 @@ export class SupabaseProductRepository implements IProductRepository {
     if (error && error.code === 'PGRST116') return null;
     if (error) throwSupabaseError(error);
 
-    // Obtener imágenes asociadas
     const images = await this.findImagesByProductId(id);
-    return this.toEntity(data, images);
+    const variants = await this.findVariantsByProductId(id);
+    return this.toEntity(data, images, variants);
   }
 
   async findAll(filters?: {
@@ -58,23 +76,31 @@ export class SupabaseProductRepository implements IProductRepository {
 
     const { data, error } = await query;
     if (error) throwSupabaseError(error);
-    return (data ?? []).map((d) => this.toEntity(d));
+
+    // Para listado, cargamos variantes e imágenes de cada producto
+    const products = await Promise.all(
+      (data ?? []).map(async (d) => {
+        const images = await this.findImagesByProductId(d.IdProduct);
+        const variants = await this.findVariantsByProductId(d.IdProduct);
+        return this.toEntity(d, images, variants);
+      }),
+    );
+
+    return products;
   }
 
-  async create(
-    data: Omit<Product, 'id' | 'isInStock' | 'images'>,
-  ): Promise<Product> {
+  async create(data: CreateProductData): Promise<Product> {
     const { data: created, error } = await this.supabase.adminClient
       .from('product')
       .insert({
         NameProduct: data.name,
-        QuantityProduct: data.quantity,
         Price: data.price,
+        Description: data.description,
+        Specification: data.specification,
+        SizeType: data.sizeType,
         IdCategorie: data.categoryId,
         IdStatusProduct: data.statusId,
-        Color: data.color,
-        Size: data.size,
-        Specification: data.specification,
+        QuantityProduct: 0, // Stock se calcula desde variantes
       })
       .select()
       .single();
@@ -85,18 +111,15 @@ export class SupabaseProductRepository implements IProductRepository {
 
   async update(
     id: string,
-    data: Partial<Omit<Product, 'id' | 'isInStock' | 'images'>>,
+    data: Partial<CreateProductData>,
   ): Promise<Product> {
-    // Construir payload mapeando propiedades del dominio a columnas de BD
     const payload: Record<string, any> = {};
     if (data.name !== undefined) payload['NameProduct'] = data.name;
-    if (data.quantity !== undefined) payload['QuantityProduct'] = data.quantity;
     if (data.price !== undefined) payload['Price'] = data.price;
+    if (data.description !== undefined) payload['Description'] = data.description;
+    if (data.specification !== undefined) payload['Specification'] = data.specification;
+    if (data.sizeType !== undefined) payload['SizeType'] = data.sizeType;
     if (data.categoryId !== undefined) payload['IdCategorie'] = data.categoryId;
-    if (data.color !== undefined) payload['Color'] = data.color;
-    if (data.size !== undefined) payload['Size'] = data.size;
-    if (data.specification !== undefined)
-      payload['Specification'] = data.specification;
 
     // Soft-delete: si statusId es '__INACTIVE__', buscar el status "inactivo"
     if (data.statusId === '__INACTIVE__') {
@@ -118,7 +141,10 @@ export class SupabaseProductRepository implements IProductRepository {
       .single();
 
     if (error) throwSupabaseError(error);
-    return this.toEntity(updated);
+
+    const images = await this.findImagesByProductId(id);
+    const variants = await this.findVariantsByProductId(id);
+    return this.toEntity(updated, images, variants);
   }
 
   async delete(id: string): Promise<void> {
@@ -157,6 +183,75 @@ export class SupabaseProductRepository implements IProductRepository {
       .from('product_image')
       .delete()
       .eq('IdProductImage', imageId);
+    if (error) throwSupabaseError(error);
+  }
+
+  // ── Variantes ──────────────────────────────────
+
+  async findVariantsByProductId(productId: string): Promise<ProductVariant[]> {
+    const { data, error } = await this.supabase.adminClient
+      .from('product_variant')
+      .select('*')
+      .eq('IdProduct', productId);
+
+    if (error) throwSupabaseError(error);
+    return (data ?? []).map((d) => this.toVariantEntity(d));
+  }
+
+  async createVariant(
+    productId: string,
+    input: CreateVariantData,
+  ): Promise<ProductVariant> {
+    const { data, error } = await this.supabase.adminClient
+      .from('product_variant')
+      .insert({
+        IdProduct: productId,
+        size: input.size ?? null,
+        color: input.color ?? null,
+        stock: input.stock,
+        priceOverride: input.priceOverride ?? null,
+      })
+      .select()
+      .single();
+
+    if (error) throwSupabaseError(error);
+    return this.toVariantEntity(data);
+  }
+
+  async updateVariant(
+    variantId: string,
+    input: Partial<CreateVariantData>,
+  ): Promise<ProductVariant> {
+    const payload: Record<string, any> = {};
+    if (input.size !== undefined) payload['size'] = input.size;
+    if (input.color !== undefined) payload['color'] = input.color;
+    if (input.stock !== undefined) payload['stock'] = input.stock;
+    if (input.priceOverride !== undefined) payload['priceOverride'] = input.priceOverride;
+
+    const { data, error } = await this.supabase.adminClient
+      .from('product_variant')
+      .update(payload)
+      .eq('IdVariant', variantId)
+      .select()
+      .single();
+
+    if (error) throwSupabaseError(error);
+    return this.toVariantEntity(data);
+  }
+
+  async deleteVariant(variantId: string): Promise<void> {
+    const { error } = await this.supabase.adminClient
+      .from('product_variant')
+      .delete()
+      .eq('IdVariant', variantId);
+    if (error) throwSupabaseError(error);
+  }
+
+  async deleteAllVariants(productId: string): Promise<void> {
+    const { error } = await this.supabase.adminClient
+      .from('product_variant')
+      .delete()
+      .eq('IdProduct', productId);
     if (error) throwSupabaseError(error);
   }
 
