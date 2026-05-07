@@ -9,7 +9,7 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
   constructor(private readonly supabase: SupabaseService) {}
 
   private toEntity(data: Record<string, any>): Category {
-    return new Category(data.IdCategorie, data.NameCategori);
+    return new Category(data.IdCategorie, data.NameCategori, data.icon ?? 'package');
   }
 
   async findAll(): Promise<Category[]> {
@@ -29,5 +29,44 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
     if (error && error.code === 'PGRST116') return null;
     if (error) throwSupabaseError(error);
     return this.toEntity(data);
+  }
+
+  async create(input: { name: string; icon?: string }): Promise<Category> {
+    const { data, error } = await this.supabase.adminClient
+      .from('categorie')
+      .insert({
+        NameCategori: input.name,
+        icon: input.icon ?? 'package',
+      })
+      .select()
+      .single();
+    if (error) throwSupabaseError(error);
+    return this.toEntity(data);
+  }
+
+  async update(
+    id: string,
+    input: { name?: string; icon?: string },
+  ): Promise<Category> {
+    const payload: Record<string, any> = {};
+    if (input.name !== undefined) payload['NameCategori'] = input.name;
+    if (input.icon !== undefined) payload['icon'] = input.icon;
+
+    const { data, error } = await this.supabase.adminClient
+      .from('categorie')
+      .update(payload)
+      .eq('IdCategorie', id)
+      .select()
+      .single();
+    if (error) throwSupabaseError(error);
+    return this.toEntity(data);
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await this.supabase.adminClient
+      .from('categorie')
+      .delete()
+      .eq('IdCategorie', id);
+    if (error) throwSupabaseError(error);
   }
 }

@@ -8,8 +8,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // CORS — permite comunicación con el frontend
+  const allowedOrigins = (process.env.FRONTEND_URL ?? 'http://localhost:5173')
+    .split(',')
+    .map((url) => url.trim());
+  // Also allow 5174 in development (Vite picks next available port)
+  if (allowedOrigins.includes('http://localhost:5173')) {
+    allowedOrigins.push('http://localhost:5174');
+  }
   app.enableCors({
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

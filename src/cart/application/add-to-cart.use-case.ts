@@ -33,18 +33,18 @@ export class AddToCartUseCase {
     if (existingItem) {
       // Sumar cantidad
       const newQuantity = existingItem.quantity + quantity;
-      if (newQuantity > product.quantity) {
+      if (newQuantity > product.totalStock) {
         throw new BadRequestException(
-          `Stock insuficiente. Disponible: ${product.quantity}, en carrito: ${existingItem.quantity}`,
+          `Stock insuficiente. Disponible: ${product.totalStock}, en carrito: ${existingItem.quantity}`,
         );
       }
       return this.cartRepository.updateQuantity(existingItem.id, newQuantity);
     }
 
     // 4. Verificar que la cantidad no excede el stock
-    if (quantity > product.quantity) {
+    if (quantity > product.totalStock) {
       throw new BadRequestException(
-        `Stock insuficiente. Disponible: ${product.quantity}`,
+        `Stock insuficiente. Disponible: ${product.totalStock}`,
       );
     }
 
