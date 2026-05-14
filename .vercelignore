@@ -1,0 +1,14 @@
+node_modules
+.git
+.gitignore
+src
+test
+.env.local
+.env.*.local
+*.spec.ts
+jest.config.js
+.vscode
+.idea
+README.md
+dist
+*.log
