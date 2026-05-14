@@ -13,9 +13,11 @@ import { PRODUCT_REPOSITORY } from '../../products/domain/product.repository.int
 @Injectable()
 export class ValidateCouponUseCase {
   constructor(
-    @Inject(COUPON_REPOSITORY) private readonly couponRepository: ICouponRepository,
+    @Inject(COUPON_REPOSITORY)
+    private readonly couponRepository: ICouponRepository,
     @Inject(CART_REPOSITORY) private readonly cartRepository: ICartRepository,
-    @Inject(PRODUCT_REPOSITORY) private readonly productRepository: IProductRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: IProductRepository,
   ) {}
 
   async execute(code: string, userId: string) {
@@ -47,7 +49,7 @@ export class ValidateCouponUseCase {
     for (const item of cartItems) {
       const product = await this.productRepository.findById(item.productId);
       if (product) {
-        total += product.price * item.quantity;
+        total += (product.price ?? 0) * item.quantity;
         if (product.categoryId) productCategories.push(product.categoryId);
       }
     }

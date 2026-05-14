@@ -9,7 +9,11 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
   constructor(private readonly supabase: SupabaseService) {}
 
   private toEntity(data: Record<string, any>): Category {
-    return new Category(data.IdCategorie, data.NameCategori, data.icon ?? 'package');
+    return new Category(
+      data.IdCategorie,
+      data.NameCategori,
+      data.icon ?? 'package',
+    );
   }
 
   async findAll(): Promise<Category[]> {

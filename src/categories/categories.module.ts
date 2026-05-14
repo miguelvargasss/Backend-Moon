@@ -6,8 +6,10 @@ import { UpdateCategoryUseCase } from './application/update-category.use-case.js
 import { DeleteCategoryUseCase } from './application/delete-category.use-case.js';
 import { SupabaseCategoryRepository } from './infrastructure/supabase-category.repository.js';
 import { CATEGORY_REPOSITORY } from './domain/category.repository.interface.js';
+import { ProductsModule } from '../products/products.module.js';
 
 @Module({
+  imports: [ProductsModule],
   controllers: [CategoriesController],
   providers: [
     ListCategoriesUseCase,

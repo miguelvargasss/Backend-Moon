@@ -35,9 +35,7 @@ export class SupabaseService implements OnModuleInit {
 
   onModuleInit() {
     this.logger.log('Supabase conectado correctamente');
-    this.logger.log(
-      `URL: ${this.configService.get<string>('SUPABASE_URL')}`,
-    );
+    this.logger.log(`URL: ${this.configService.get<string>('SUPABASE_URL')}`);
   }
 
   /**

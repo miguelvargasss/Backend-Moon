@@ -26,24 +26,23 @@ export class SupabaseAuthRepository implements IAuthRepository {
     }
 
     // Obtener perfil del usuario con su rol desde la BD
-    const { data: profile, error: profileError } = await this.supabase.adminClient
-      .from('user')
-      .select('IdUser, Name, LastName, email, role:role(nameRole)')
-      .eq('IdUser', data.user!.id)
-      .single();
+    const { data: profile, error: profileError } =
+      await this.supabase.adminClient
+        .from('user')
+        .select('IdUser, Name, LastName, email, role:role(nameRole)')
+        .eq('IdUser', data.user.id)
+        .single();
 
     if (profileError || !profile) {
-      this.logger.warn(
-        `Usuario autenticado sin perfil en BD: ${data.user!.id}`,
-      );
+      this.logger.warn(`Usuario autenticado sin perfil en BD: ${data.user.id}`);
       throw new UnauthorizedException(
         'Perfil de usuario no encontrado. Contacte al administrador.',
       );
     }
 
     return {
-      accessToken: data.session!.access_token,
-      refreshToken: data.session!.refresh_token,
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
       user: {
         id: profile.IdUser,
         email: profile.email,
@@ -74,17 +73,23 @@ export class SupabaseAuthRepository implements IAuthRepository {
     // 2. Crear usuario con Admin API (service_role key)
     //    - Bypassa restricciones de email confirmation, rate limiting, etc.
     //    - email_confirm: true → usuario queda confirmado inmediatamente
-    const { data, error } = await this.supabase.adminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: metadata,
-    });
+    const { data, error } =
+      await this.supabase.adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: metadata,
+      });
 
     if (error) {
-      this.logger.error(`Admin createUser error: ${error.message} (status: ${error.status})`);
+      this.logger.error(
+        `Admin createUser error: ${error.message} (status: ${error.status})`,
+      );
 
-      if (error.message.includes('already been registered') || error.message.includes('already exists')) {
+      if (
+        error.message.includes('already been registered') ||
+        error.message.includes('already exists')
+      ) {
         throw new ConflictException('Este email ya está registrado');
       }
       if (error.message.includes('password')) {
@@ -102,11 +107,12 @@ export class SupabaseAuthRepository implements IAuthRepository {
     try {
       // 3. Obtener el IdRole del rol solicitado (por defecto 'comprador')
       const roleName = role ?? 'comprador';
-      const { data: roleData, error: roleError } = await this.supabase.adminClient
-        .from('role')
-        .select('IdRole')
-        .eq('nameRole', roleName)
-        .single();
+      const { data: roleData, error: roleError } =
+        await this.supabase.adminClient
+          .from('role')
+          .select('IdRole')
+          .eq('nameRole', roleName)
+          .single();
 
       if (roleError || !roleData) {
         throw new InternalServerErrorException(
@@ -132,7 +138,9 @@ export class SupabaseAuthRepository implements IAuthRepository {
         );
 
       if (userError) {
-        this.logger.error(`Error al crear perfil de usuario: ${userError.message}`);
+        this.logger.error(
+          `Error al crear perfil de usuario: ${userError.message}`,
+        );
         throw new InternalServerErrorException(
           'Error al crear el perfil del usuario',
         );
@@ -144,7 +152,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
         .upsert(
           {
             IdUser: userId,
-            totalPints: 0,
+            points: 0,
           },
           { onConflict: 'IdUser' },
         );
@@ -168,12 +176,16 @@ export class SupabaseAuthRepository implements IAuthRepository {
 
   async logout(accessToken: string) {
     // Obtener el usuario a partir del token para cerrar su sesión específica
-    const { data: userData } = await this.supabase.client.auth.getUser(accessToken);
+    const { data: userData } =
+      await this.supabase.client.auth.getUser(accessToken);
 
     if (userData?.user) {
       // Usar admin API para cerrar sesión del usuario específico
       // scope: 'global' cierra todas las sesiones activas del usuario
-      await this.supabase.adminClient.auth.admin.signOut(userData.user.id, 'global');
+      await this.supabase.adminClient.auth.admin.signOut(
+        userData.user.id,
+        'global',
+      );
     }
   }
 
@@ -189,4 +201,3 @@ export class SupabaseAuthRepository implements IAuthRepository {
     return { accessToken: data.session!.access_token };
   }
 }
-

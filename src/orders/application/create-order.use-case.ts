@@ -15,7 +15,12 @@ import { SHIPPING_REPOSITORY } from '../../shipping/domain/shipping.repository.i
 import { ValidateCouponUseCase } from '../../coupons/application/validate-coupon.use-case.js';
 import type { ICouponRepository } from '../../coupons/domain/coupon.repository.interface.js';
 import { COUPON_REPOSITORY } from '../../coupons/domain/coupon.repository.interface.js';
+import type { IUserRepository } from '../../users/domain/user.repository.interface.js';
+import { USER_REPOSITORY } from '../../users/domain/user.repository.interface.js';
 import { ConfigService } from '@nestjs/config';
+
+/** Regla de negocio MoonPoints: 1 punto por cada S/2 gastados. */
+const SOLES_PER_POINT = 2;
 
 /**
  * CU03 — Checkout completo.
@@ -25,11 +30,17 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class CreateOrderUseCase {
   constructor(
-    @Inject(ORDER_REPOSITORY) private readonly orderRepository: IOrderRepository,
+    @Inject(ORDER_REPOSITORY)
+    private readonly orderRepository: IOrderRepository,
     @Inject(CART_REPOSITORY) private readonly cartRepository: ICartRepository,
-    @Inject(PRODUCT_REPOSITORY) private readonly productRepository: IProductRepository,
-    @Inject(SHIPPING_REPOSITORY) private readonly shippingRepository: IShippingRepository,
-    @Inject(COUPON_REPOSITORY) private readonly couponRepository: ICouponRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: IProductRepository,
+    @Inject(SHIPPING_REPOSITORY)
+    private readonly shippingRepository: IShippingRepository,
+    @Inject(COUPON_REPOSITORY)
+    private readonly couponRepository: ICouponRepository,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: IUserRepository,
     private readonly validateCouponUseCase: ValidateCouponUseCase,
     private readonly configService: ConfigService,
   ) {}
@@ -46,33 +57,88 @@ export class CreateOrderUseCase {
     }
 
     // 2. Verificar stock y construir ítems de la orden
-    const orderItems: { productId: string; quantity: number; priceAtSale: number; productName: string }[] = [];
+    //    Resolvemos la variante si el cart item la trae.
+    const orderItems: {
+      productId: string;
+      quantity: number;
+      priceAtSale: number;
+      productName: string;
+    }[] = [];
+    // Lista paralela para decrementar stock una vez creada la orden.
+    const stockOps: Array<
+      | { kind: 'product'; productId: string; quantity: number }
+      | { kind: 'variant'; variantId: string; quantity: number }
+    > = [];
     let total = 0;
 
     for (const item of cartItems) {
       const product = await this.productRepository.findById(item.productId);
       if (!product) {
-        throw new NotFoundException(`Producto no encontrado: ${item.productId}`);
-      }
-      if (item.quantity > product.totalStock) {
-        throw new BadRequestException(
-          `Stock insuficiente para "${product.name}". Disponible: ${product.totalStock}`,
+        throw new NotFoundException(
+          `Producto no encontrado: ${item.productId}`,
         );
       }
+
+      // Resolver variante si aplica
+      let variant: { id: string; stock: number; price: number } | null = null;
+      if (item.variantId) {
+        const found =
+          product.productType === 'single'
+            ? product.variants.find((v) => v.id === item.variantId)
+            : product.styles
+                .flatMap((s) => s.variants)
+                .find((v) => v.id === item.variantId);
+        if (!found) {
+          throw new NotFoundException(
+            `Variante no encontrada para "${product.name}"`,
+          );
+        }
+        variant = { id: found.id, stock: found.stock, price: Number(found.price) };
+      }
+
+      // Validar stock (por variante si existe, sino producto)
+      const availableStock = variant ? variant.stock : product.totalStock;
+      if (item.quantity > availableStock) {
+        throw new BadRequestException(
+          `Stock insuficiente para "${product.name}". Disponible: ${availableStock}`,
+        );
+      }
+
+      // Precio congelado: variante > producto base
+      const priceAtSale = variant?.price ?? product.price ?? 0;
+
       orderItems.push({
         productId: item.productId,
         quantity: item.quantity,
-        priceAtSale: product.price,
+        priceAtSale,
         productName: product.name,
       });
-      total += product.price * item.quantity;
+      total += priceAtSale * item.quantity;
+
+      // Registrar operación de stock a aplicar luego
+      if (variant) {
+        stockOps.push({
+          kind: 'variant',
+          variantId: variant.id,
+          quantity: item.quantity,
+        });
+      } else {
+        stockOps.push({
+          kind: 'product',
+          productId: item.productId,
+          quantity: item.quantity,
+        });
+      }
     }
 
     // 3. Validar cupón si existe
     let couponId: string | undefined;
     let discount = 0;
     if (couponCode) {
-      const couponResult = await this.validateCouponUseCase.execute(couponCode, userId);
+      const couponResult = await this.validateCouponUseCase.execute(
+        couponCode,
+        userId,
+      );
       if (!couponResult.valid) {
         throw new BadRequestException(couponResult.reason);
       }
@@ -92,7 +158,9 @@ export class CreateOrderUseCase {
     // 6. Obtener IdStatus para "EN PROCESO"
     const statusId = await this.orderRepository.getStatusIdByName('EN PROCESO');
     if (!statusId) {
-      throw new BadRequestException('Estado "EN PROCESO" no configurado en la BD');
+      throw new BadRequestException(
+        'Estado "EN PROCESO" no configurado en la BD',
+      );
     }
 
     // 7. Crear orden
@@ -108,9 +176,20 @@ export class CreateOrderUseCase {
       orderItems,
     );
 
-    // 8. Reducir stock (nota: la lógica de variantes específicas
-    //    se implementará cuando el carrito soporte selección de variante)
-    // Por ahora marcamos los productos como procesados
+    // 8. Reducir stock — variante si existe, sino producto base
+    for (const op of stockOps) {
+      if (op.kind === 'variant') {
+        await this.productRepository.decrementVariantStock(
+          op.variantId,
+          op.quantity,
+        );
+      } else {
+        await this.productRepository.decrementProductStock(
+          op.productId,
+          op.quantity,
+        );
+      }
+    }
 
     // 9. Decrementar cupón si se usó
     if (couponId) {
@@ -120,25 +199,48 @@ export class CreateOrderUseCase {
     // 10. Vaciar carrito
     await this.cartRepository.clearCart(userId);
 
+    // 10.5 Otorgar MoonPoints — 1 punto por cada S/SOLES_PER_POINT del total final.
+    // Envuelto en try/catch para que un fallo de fidelización no invalide el pedido.
+    const finalTotalForPoints = Math.max(0, total - discount);
+    const pointsEarned = Math.floor(finalTotalForPoints / SOLES_PER_POINT);
+    let totalPoints: number | undefined;
+    if (pointsEarned > 0) {
+      try {
+        totalPoints = await this.userRepository.addPoints(userId, pointsEarned);
+      } catch (err) {
+        // Log silencioso — el pedido ya está confirmado y debe responder éxito
+        console.error('[CreateOrder] Falló otorgar MoonPoints:', err);
+      }
+    }
+
     // 11. Construir URL WhatsApp
-    const whatsappNumber = this.configService.get<string>('WHATSAPP_NUMBER', '+51999159716')
+    const whatsappNumber = this.configService
+      .get<string>('WHATSAPP_NUMBER', '+51999159716')
       .replace('+', '');
     const finalTotal = Math.max(0, total - discount);
 
     const itemsSummary = orderItems
-      .map((i) => `• ${i.productName} x${i.quantity} — S/ ${(i.priceAtSale * i.quantity).toFixed(2)}`)
+      .map(
+        (i) =>
+          `• ${i.productName} x${i.quantity} — S/ ${(i.priceAtSale * i.quantity).toFixed(2)}`,
+      )
       .join('%0A');
 
     const whatsappMessage = encodeURIComponent(
       `🌙 *Nuevo pedido MoonPhases*\n` +
-      `📋 Código: ${orderCode}\n` +
-      `👤 ${address.firstName} ${address.lastName}\n` +
-      `📍 ${address.address}, ${address.city}\n` +
-      `📱 ${address.phone}\n` +
-      `\n📦 Productos:\n` +
-      orderItems.map((i) => `• ${i.productName} x${i.quantity} — S/ ${(i.priceAtSale * i.quantity).toFixed(2)}`).join('\n') +
-      `\n\n💰 Total: S/ ${finalTotal.toFixed(2)}` +
-      (discount > 0 ? `\n🎟️ Descuento: -S/ ${discount.toFixed(2)}` : ''),
+        `📋 Código: ${orderCode}\n` +
+        `👤 ${address.firstName} ${address.lastName}\n` +
+        `📍 ${address.address}, ${address.city}\n` +
+        `📱 ${address.phone}\n` +
+        `\n📦 Productos:\n` +
+        orderItems
+          .map(
+            (i) =>
+              `• ${i.productName} x${i.quantity} — S/ ${(i.priceAtSale * i.quantity).toFixed(2)}`,
+          )
+          .join('\n') +
+        `\n\n💰 Total: S/ ${finalTotal.toFixed(2)}` +
+        (discount > 0 ? `\n🎟️ Descuento: -S/ ${discount.toFixed(2)}` : ''),
     );
 
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
@@ -148,6 +250,8 @@ export class CreateOrderUseCase {
       total: finalTotal,
       discount,
       whatsappUrl,
+      pointsEarned,
+      totalPoints,
     };
   }
 

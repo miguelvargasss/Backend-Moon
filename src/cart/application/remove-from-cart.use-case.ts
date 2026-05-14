@@ -4,7 +4,9 @@ import { CART_REPOSITORY } from '../domain/cart.repository.interface.js';
 
 @Injectable()
 export class RemoveFromCartUseCase {
-  constructor(@Inject(CART_REPOSITORY) private readonly cartRepository: ICartRepository) {}
+  constructor(
+    @Inject(CART_REPOSITORY) private readonly cartRepository: ICartRepository,
+  ) {}
 
   async execute(cartItemId: string) {
     return this.cartRepository.removeItem(cartItemId);

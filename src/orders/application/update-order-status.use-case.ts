@@ -28,7 +28,10 @@ export class UpdateOrderStatusUseCase {
 
     // 2. Verificar estado actual — bloquear si ya finalizó o canceló
     const currentStatusName = order.statusName;
-    if (currentStatusName === 'FINALIZADO' || currentStatusName === 'CANCELADO') {
+    if (
+      currentStatusName === 'FINALIZADO' ||
+      currentStatusName === 'CANCELADO'
+    ) {
       throw new BadRequestException(
         `No se puede modificar un pedido en estado "${currentStatusName}"`,
       );

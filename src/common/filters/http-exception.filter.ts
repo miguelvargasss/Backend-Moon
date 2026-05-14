@@ -30,10 +30,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
+      // DEBUG: Log full validation errors
+      if (status === 400) {
+        const req = ctx.getRequest();
+        this.logger.warn(`🔴 [VALIDATION ERROR] Body recibido: ${JSON.stringify(req.body, null, 2)}`);
+        this.logger.warn(`🔴 [VALIDATION ERROR] Response: ${JSON.stringify(exceptionResponse, null, 2)}`);
+      }
+
       // Extraer el mensaje de la excepción
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
-      } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      } else if (
+        typeof exceptionResponse === 'object' &&
+        exceptionResponse !== null
+      ) {
         const responseObj = exceptionResponse as Record<string, any>;
         // class-validator devuelve un array en 'message'
         if (Array.isArray(responseObj.message)) {

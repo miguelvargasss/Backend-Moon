@@ -10,8 +10,17 @@ export class SupabaseShippingRepository implements IShippingRepository {
 
   private toEntity(d: Record<string, any>): ShippingAddress {
     return new ShippingAddress(
-      d.IdShippingAddress, d.IdUser, d.FirstName, d.LastName,
-      d.Address, d.City, d.Region, d.Phone, d.Reference, d.CodeZip, d.DNI,
+      d.IdShippingAddress,
+      d.IdUser,
+      d.FirstName,
+      d.LastName,
+      d.Address,
+      d.City,
+      d.Region,
+      d.Phone,
+      d.Reference,
+      d.CodeZip,
+      d.DNI,
     );
   }
 
@@ -35,7 +44,9 @@ export class SupabaseShippingRepository implements IShippingRepository {
     return this.toEntity(data);
   }
 
-  async create(addressData: Omit<ShippingAddress, 'id'>): Promise<ShippingAddress> {
+  async create(
+    addressData: Omit<ShippingAddress, 'id'>,
+  ): Promise<ShippingAddress> {
     const { data, error } = await this.supabase.adminClient
       .from('shipping_address')
       .insert({

@@ -4,7 +4,7 @@ import { AUTH_REPOSITORY } from '../domain/auth.repository.interface';
 
 describe('LoginUseCase', () => {
   let useCase: LoginUseCase;
-  
+
   // Creamos un Mock (simulacro) del repositorio para no tocar la BD real
   const mockAuthRepository = {
     login: jest.fn(),
@@ -40,9 +40,9 @@ describe('LoginUseCase', () => {
     const expectedResult = {
       user: { id: '1', email, role: 'comprador' },
       access_token: 'fake-jwt-token',
-      refresh_token: 'fake-refresh-token'
+      refresh_token: 'fake-refresh-token',
     };
-    
+
     // Simulamos que el repositorio responde correctamente
     mockAuthRepository.login.mockResolvedValue(expectedResult);
 
@@ -60,12 +60,14 @@ describe('LoginUseCase', () => {
     const email = 'test@example.com';
     const password = 'wrong-password';
     const expectedError = new Error('Invalid credentials');
-    
+
     // Simulamos que el repositorio falla
     mockAuthRepository.login.mockRejectedValue(expectedError);
 
     // Act & Assert (Actuar y Afirmar)
-    await expect(useCase.execute(email, password)).rejects.toThrow('Invalid credentials');
+    await expect(useCase.execute(email, password)).rejects.toThrow(
+      'Invalid credentials',
+    );
     expect(mockAuthRepository.login).toHaveBeenCalledWith(email, password);
   });
 });
