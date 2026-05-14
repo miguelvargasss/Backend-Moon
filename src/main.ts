@@ -1,10 +1,13 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, INestApplication } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
-async function bootstrap() {
-  const logger = new Logger('Bootstrap');
+let cachedApp: INestApplication;
+
+async function bootstrap(): Promise<INestApplication> {
+  if (cachedApp) return cachedApp;
+
   const app = await NestFactory.create(AppModule);
 
   // CORS — permite comunicación con el frontend
@@ -34,8 +37,25 @@ async function bootstrap() {
     }),
   );
 
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  logger.log(`🚀 Backend MoonPhases corriendo en: http://localhost:${port}`);
+  await app.init();
+  cachedApp = app;
+  return app;
 }
-bootstrap();
+
+// Ejecución local
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  bootstrap().then(async (app) => {
+    const port = process.env.PORT ?? 3000;
+    await app.listen(port);
+    new Logger('Bootstrap').log(
+      `🚀 Backend MoonPhases corriendo en: http://localhost:${port}`,
+    );
+  });
+}
+
+// Exportar para Vercel
+export default async (req: any, res: any) => {
+  const app = await bootstrap();
+  const instance = app.getHttpAdapter().getInstance();
+  instance(req, res);
+};
