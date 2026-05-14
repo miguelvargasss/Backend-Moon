@@ -9,6 +9,8 @@ export class DeleteCategoryUseCase {
     private readonly categoryRepository: ICategoryRepository,
   ) {}
 
+
+  // esta seccion es para eliminar una categoria
   async execute(id: string): Promise<void> {
     const existing = await this.categoryRepository.findById(id);
     if (!existing) {
