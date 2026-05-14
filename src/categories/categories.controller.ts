@@ -46,6 +46,7 @@ export class CategoriesController {
     const categories = await this.listCategories.execute();
     return ApiResponse.ok(categories);
   }
+  
 
   /** POST /categories — Crear categoría (admin) */
   @Post()
