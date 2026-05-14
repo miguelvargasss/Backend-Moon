@@ -10,5 +10,4 @@ jest.config.js
 .vscode
 .idea
 README.md
-dist
 *.log
