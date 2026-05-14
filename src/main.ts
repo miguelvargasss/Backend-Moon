@@ -28,8 +28,8 @@ async function bootstrap() {
   // Validación global de DTOs
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,           // elimina campos no declarados en el DTO
-      transform: true,           // transforma tipos automáticamente
+      whitelist: true, // elimina campos no declarados en el DTO
+      transform: true, // transforma tipos automáticamente
       forbidNonWhitelisted: true, // lanza error si llegan campos no permitidos
     }),
   );
@@ -39,4 +39,3 @@ async function bootstrap() {
   logger.log(`🚀 Backend MoonPhases corriendo en: http://localhost:${port}`);
 }
 bootstrap();
-

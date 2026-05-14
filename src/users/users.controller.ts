@@ -8,9 +8,15 @@ import {
 } from '@nestjs/common';
 import { GetUserProfileUseCase } from './application/get-user-profile.use-case.js';
 import { UpdateUserProfileUseCase } from './application/update-user-profile.use-case.js';
+import { ListAllUsersUseCase } from './application/list-all-users.use-case.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { AuthGuard } from '../common/guards/auth.guard.js';
-import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator.js';
+import { RolesGuard } from '../common/guards/roles.guard.js';
+import { Roles } from '../common/decorators/roles.decorator.js';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../common/decorators/current-user.decorator.js';
 import { ApiResponse } from '../common/dto/api-response.dto.js';
 
 @Controller('users')
@@ -19,7 +25,17 @@ export class UsersController {
   constructor(
     private readonly getUserProfile: GetUserProfileUseCase,
     private readonly updateUserProfile: UpdateUserProfileUseCase,
+    private readonly listAllUsers: ListAllUsersUseCase,
   ) {}
+
+  /** GET /users/admin/all — Listar todos los usuarios (solo admin) */
+  @Get('admin/all')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async findAll() {
+    const users = await this.listAllUsers.execute();
+    return ApiResponse.ok(users);
+  }
 
   @Get('profile')
   async getProfile(@CurrentUser() user: AuthUser) {

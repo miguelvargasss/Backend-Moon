@@ -11,6 +11,15 @@ export class Order {
     public readonly couponId?: string,
     public readonly statusName?: string,
     public readonly items?: OrderItem[],
+    public readonly customer?: {
+      firstName: string;
+      lastName: string;
+      dni?: string;
+      phone: string;
+      address: string;
+      city: string;
+      region: string;
+    },
   ) {}
 }
 

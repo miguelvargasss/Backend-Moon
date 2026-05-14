@@ -11,7 +11,10 @@ export interface AuthUserData {
 }
 
 export interface IAuthRepository {
-  login(email: string, password: string): Promise<{
+  login(
+    email: string,
+    password: string,
+  ): Promise<{
     accessToken: string;
     refreshToken: string;
     user: AuthUserData;

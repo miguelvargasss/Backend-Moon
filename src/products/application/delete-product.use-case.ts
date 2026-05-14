@@ -26,7 +26,9 @@ export class DeleteProductUseCase {
     if (hasHistory) {
       // Soft-delete: buscar el statusProduct "inactivo" y asignarlo
       // Se pasa statusId con valor especial que el repo resolverá
-      await this.productRepository.update(id, { statusId: '__INACTIVE__' } as any);
+      await this.productRepository.update(id, {
+        statusId: '__INACTIVE__',
+      } as any);
       return { action: 'deactivated' };
     }
 

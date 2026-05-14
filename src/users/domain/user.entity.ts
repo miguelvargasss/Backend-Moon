@@ -7,6 +7,9 @@ export class User {
     public readonly lastName: string,
     public readonly email: string,
     public readonly roleId?: string,
+    public readonly points?: number,
+    public readonly roleName?: string,
+    public readonly createdAt?: string,
   ) {}
 
   get fullName(): string {

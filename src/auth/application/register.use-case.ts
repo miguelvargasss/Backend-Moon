@@ -9,7 +9,12 @@ export class RegisterUseCase {
     private readonly authRepository: IAuthRepository,
   ) {}
 
-  async execute(email: string, password: string, metadata: { Name: string; LastName: string }, role?: string) {
+  async execute(
+    email: string,
+    password: string,
+    metadata: { Name: string; LastName: string },
+    role?: string,
+  ) {
     return this.authRepository.register(email, password, metadata, role);
   }
 }

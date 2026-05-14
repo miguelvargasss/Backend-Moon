@@ -4,7 +4,9 @@ import { CART_REPOSITORY } from '../domain/cart.repository.interface.js';
 
 @Injectable()
 export class GetCartUseCase {
-  constructor(@Inject(CART_REPOSITORY) private readonly cartRepository: ICartRepository) {}
+  constructor(
+    @Inject(CART_REPOSITORY) private readonly cartRepository: ICartRepository,
+  ) {}
 
   async execute(userId: string) {
     return this.cartRepository.findByUserId(userId);

@@ -16,4 +16,5 @@ export interface IOrderRepository {
   addHistory(orderId: string): Promise<void>;
   getStatusIdByName(name: string): Promise<string | null>;
   getStatusNameById(id: string): Promise<string | null>;
+  findAllStatuses(): Promise<{ id: string; name: string }[]>;
 }

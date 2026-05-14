@@ -4,7 +4,7 @@ import { AUTH_REPOSITORY } from '../domain/auth.repository.interface';
 
 describe('RegisterUseCase', () => {
   let useCase: RegisterUseCase;
-  
+
   // Creamos un Mock (simulacro) del repositorio para no tocar la BD real
   const mockAuthRepository = {
     register: jest.fn(),
@@ -43,9 +43,9 @@ describe('RegisterUseCase', () => {
     const expectedResult = {
       user: { id: '2', email, role },
       access_token: 'fake-jwt-token',
-      refresh_token: 'fake-refresh-token'
+      refresh_token: 'fake-refresh-token',
     };
-    
+
     // Simulamos que el repositorio responde correctamente
     mockAuthRepository.register.mockResolvedValue(expectedResult);
 
@@ -54,7 +54,12 @@ describe('RegisterUseCase', () => {
 
     // Assert (Afirmar)
     expect(result).toEqual(expectedResult);
-    expect(mockAuthRepository.register).toHaveBeenCalledWith(email, password, metadata, role);
+    expect(mockAuthRepository.register).toHaveBeenCalledWith(
+      email,
+      password,
+      metadata,
+      role,
+    );
     expect(mockAuthRepository.register).toHaveBeenCalledTimes(1);
   });
 
@@ -64,12 +69,19 @@ describe('RegisterUseCase', () => {
     const password = 'password123';
     const metadata = { Name: 'Miguel', LastName: 'Perez' };
     const expectedError = new Error('User already exists');
-    
+
     // Simulamos que el repositorio falla
     mockAuthRepository.register.mockRejectedValue(expectedError);
 
     // Act & Assert (Actuar y Afirmar)
-    await expect(useCase.execute(email, password, metadata)).rejects.toThrow('User already exists');
-    expect(mockAuthRepository.register).toHaveBeenCalledWith(email, password, metadata, undefined);
+    await expect(useCase.execute(email, password, metadata)).rejects.toThrow(
+      'User already exists',
+    );
+    expect(mockAuthRepository.register).toHaveBeenCalledWith(
+      email,
+      password,
+      metadata,
+      undefined,
+    );
   });
 });

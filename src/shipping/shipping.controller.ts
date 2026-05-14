@@ -12,7 +12,10 @@ import { ListShippingAddressesUseCase } from './application/list-shipping-addres
 import { DeleteShippingAddressUseCase } from './application/delete-shipping-address.use-case.js';
 import { CreateShippingAddressDto } from './dto/create-shipping-address.dto.js';
 import { AuthGuard } from '../common/guards/auth.guard.js';
-import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator.js';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../common/decorators/current-user.decorator.js';
 import { ApiResponse } from '../common/dto/api-response.dto.js';
 import { ShippingAddress } from './domain/shipping-address.entity.js';
 

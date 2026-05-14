@@ -18,6 +18,8 @@ import { GetProductUseCase } from './application/get-product.use-case.js';
 import { ListProductsUseCase } from './application/list-products.use-case.js';
 import { UpdateProductUseCase } from './application/update-product.use-case.js';
 import { DeleteProductUseCase } from './application/delete-product.use-case.js';
+import { GetProductStatusesUseCase } from './application/get-product-statuses.use-case.js';
+import { GetSizeSystemsUseCase } from './application/get-size-systems.use-case.js';
 import { UploadProductImagesUseCase } from './application/upload-product-images.use-case.js';
 import { DeleteProductImageUseCase } from './application/delete-product-image.use-case.js';
 import { CreateProductDto } from './dto/create-product.dto.js';
@@ -36,6 +38,8 @@ export class ProductsController {
     private readonly listProducts: ListProductsUseCase,
     private readonly updateProduct: UpdateProductUseCase,
     private readonly deleteProduct: DeleteProductUseCase,
+    private readonly getProductStatuses: GetProductStatusesUseCase,
+    private readonly getSizeSystems: GetSizeSystemsUseCase,
     private readonly uploadImages: UploadProductImagesUseCase,
     private readonly deleteImage: DeleteProductImageUseCase,
   ) {}
@@ -45,6 +49,20 @@ export class ProductsController {
   async findAll(@Query() filters: FilterProductsDto) {
     const products = await this.listProducts.execute(filters);
     return ApiResponse.ok(products);
+  }
+
+  /** GET /products/statuses — Obtener lista de estados posibles */
+  @Get('statuses')
+  async getStatuses() {
+    const statuses = await this.getProductStatuses.execute();
+    return ApiResponse.ok(statuses);
+  }
+
+  /** GET /products/size-systems — Obtener catálogos de tallas */
+  @Get('size-systems')
+  async findSizeSystems() {
+    const systems = await this.getSizeSystems.execute();
+    return ApiResponse.ok(systems);
   }
 
   /** GET /products/:id — Detalle de producto con imágenes */
@@ -62,7 +80,8 @@ export class ProductsController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin')
   async create(@Body() dto: CreateProductDto) {
-    const product = await this.createProduct.execute(dto as any);
+    console.log('📦 [CREATE PRODUCT] DTO recibido:', JSON.stringify(dto, null, 2));
+    const product = await this.createProduct.execute(dto);
     return ApiResponse.created(product, 'Producto creado exitosamente');
   }
 
@@ -96,8 +115,9 @@ export class ProductsController {
   async uploadImage(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
+    @Query('styleId') styleId?: string,
   ) {
-    const image = await this.uploadImages.execute(id, file);
+    const image = await this.uploadImages.execute(id, file, styleId);
     return ApiResponse.created(image, 'Imagen subida exitosamente');
   }
 

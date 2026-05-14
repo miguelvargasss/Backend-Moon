@@ -16,7 +16,10 @@ import { ClearCartUseCase } from './application/clear-cart.use-case.js';
 import { AddToCartDto } from './dto/add-to-cart.dto.js';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto.js';
 import { AuthGuard } from '../common/guards/auth.guard.js';
-import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator.js';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../common/decorators/current-user.decorator.js';
 import { ApiResponse } from '../common/dto/api-response.dto.js';
 
 @Controller('cart')
@@ -44,16 +47,14 @@ export class CartController {
       user.userId,
       dto.productId,
       dto.quantity,
+      dto.variantId,
     );
     return ApiResponse.created(item, 'Producto agregado al carrito');
   }
 
   /** PATCH /cart/items/:id — Actualizar cantidad */
   @Patch('items/:id')
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateCartItemDto,
-  ) {
+  async update(@Param('id') id: string, @Body() dto: UpdateCartItemDto) {
     const item = await this.updateCartItem.execute(id, dto.quantity);
     return ApiResponse.ok(item, 'Cantidad actualizada');
   }
