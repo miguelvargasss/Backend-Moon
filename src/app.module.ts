@@ -9,6 +9,7 @@ import { OrdersModule } from './orders/orders.module.js';
 import { CartModule } from './cart/cart.module.js';
 import { CouponsModule } from './coupons/coupons.module.js';
 import { ShippingModule } from './shipping/shipping.module.js';
+import { AppController } from './app.controller.js';
 
 @Module({
   imports: [
@@ -31,5 +32,6 @@ import { ShippingModule } from './shipping/shipping.module.js';
     CouponsModule,
     ShippingModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}
