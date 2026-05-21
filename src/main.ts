@@ -11,7 +11,7 @@ async function bootstrap(): Promise<INestApplication> {
   const app = await NestFactory.create(AppModule);
 
   // CORS — permite comunicación con el frontend
-  const allowedOrigins = (process.env.FRONTEND_URL ?? 'http://localhost:5173')
+  const allowedOrigins = (process.env.FRONTEND_URL ?? 'https://frontend-moon-zogg-h4s00ui25-revolucions-projects.vercel.app')
     .split(',')
     .map((url) => url.trim());
   // Also allow 5174 in development (Vite picks next available port)
