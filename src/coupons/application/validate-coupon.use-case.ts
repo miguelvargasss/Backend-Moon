@@ -24,62 +24,69 @@ export class ValidateCouponUseCase {
     // 1. Buscar cupón
     const coupon = await this.couponRepository.findByCode(code);
     if (!coupon) {
-      return { valid: false, reason: 'Código inexistente' };
+      throw new BadRequestException('El codigo de Cupon no existe!');
     }
 
-    // 2. Verificar expiración
+    // 2. Verificar expiración y Stock
     if (coupon.isExpired()) {
-      return { valid: false, reason: 'Cupón expirado' };
+      throw new BadRequestException('Este cupón ya ha expirado!');
     }
-
-    // 3. Verificar stock del cupón
     if (!coupon.hasStock()) {
-      return { valid: false, reason: 'Cupón agotado' };
+      throw new BadRequestException('Este cupón ya no tiene usos disponibles!');
     }
 
-    // 4. Obtener carrito y calcular total
+    // 3. Obtener carrito y calcular total
     const cartItems = await this.cartRepository.findByUserId(userId);
     if (cartItems.length === 0) {
-      return { valid: false, reason: 'Tu carrito está vacío' };
+      throw new BadRequestException('El carrito esta vacio!');
     }
 
     // Calcular el total del carrito
-    let total = 0;
-    const productCategories: string[] = [];
+    let totalGeneral = 0;
+    let subtotalElegible = 0;
+
     for (const item of cartItems) {
       const product = await this.productRepository.findById(item.productId);
       if (product) {
-        total += (product.price ?? 0) * item.quantity;
-        if (product.categoryId) productCategories.push(product.categoryId);
+        // Usamos item.productPrice porque ya tiene el precio correcto resuelto
+        // (variante > producto base). product.price es null en productos con variantes.
+        const unitPrice = item.productPrice ?? product.price ?? 0;
+        const itemTotal = unitPrice * item.quantity;
+        totalGeneral += itemTotal;
+
+        if (!coupon.categoryId || product.categoryId === coupon.categoryId) {
+          subtotalElegible += itemTotal;
+        }
       }
     }
 
-    // 5. Verificar monto mínimo
-    if (total < coupon.minimumAmount) {
-      return {
-        valid: false,
-        reason: `Este cupón solo aplica para compras mayores a S/ ${coupon.minimumAmount}`,
-      };
+    // Validaciones finales
+    if (coupon.categoryId && subtotalElegible === 0) {
+      throw new BadRequestException(
+        'Este cupón no aplica a los productos en tu carrito.',
+      );
     }
 
-    // 6. Verificar categoría (CU06)
-    if (coupon.categoryId) {
-      const hasMatchingCategory = productCategories.includes(coupon.categoryId);
-      if (!hasMatchingCategory) {
-        return {
-          valid: false,
-          reason: 'Cupón no aplica a los productos en tu carrito',
-        };
-      }
+    if (subtotalElegible < coupon.minimumAmount) {
+      throw new BadRequestException(
+        coupon.categoryId
+          ? `Debes tener al menos S/ ${coupon.minimumAmount} en productos de la categoría requerida.`
+          : `El monto mínimo de compra para este cupón es de S/ ${coupon.minimumAmount}.`,
+      );
     }
 
-    // 7. Todo OK
-    const newTotal = Math.max(0, total - coupon.discountAmount);
+    // Calculo de descuento exacto — nunca supera el subtotal aplicable
+    const applicableSubtotal = coupon.categoryId
+      ? subtotalElegible
+      : totalGeneral;
+    const discountToApply =
+      coupon.discountType === 'percentage'
+        ? (applicableSubtotal * Math.min(coupon.discountAmount, 100)) / 100
+        : Math.min(coupon.discountAmount, applicableSubtotal);
     return {
       valid: true,
-      discount: coupon.discountAmount,
-      originalTotal: total,
-      newTotal,
+      discountAmount: discountToApply,
+      originalTotal: totalGeneral,
       couponId: coupon.id,
     };
   }

@@ -6,6 +6,7 @@ import {
   IsNumber,
   Min,
   IsUUID,
+  IsIn,
 } from 'class-validator';
 
 export class UpdateCouponDto {
@@ -34,6 +35,12 @@ export class UpdateCouponDto {
   @IsNumber({}, { message: 'El monto de descuento debe ser un número' })
   @Min(0, { message: 'El descuento no puede ser negativo' })
   discountAmount?: number;
+
+  @IsOptional()
+  @IsIn(['fixed', 'percentage'], {
+    message: 'El tipo de descuento debe ser fixed o percentage',
+  })
+  discountType?: 'fixed' | 'percentage';
 
   @IsOptional()
   @IsUUID('4', { message: 'El ID de categoría debe ser un UUID válido' })

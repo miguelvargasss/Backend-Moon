@@ -10,22 +10,24 @@ export class SupabaseOrderRepository implements IOrderRepository {
 
   private toEntity(d: Record<string, any>): Order {
     const statusName = d.status?.nameStatus ?? d.statusName;
-    
+
     // Map items if present
-    const items = d.order_item 
-      ? d.order_item.map((i: any) => this.toItemEntity(i)) 
+    const items = d.order_item
+      ? d.order_item.map((i: any) => this.toItemEntity(i))
       : undefined;
 
     // Map customer if shipping_address is present
-    const customer = d.shipping_address ? {
-      firstName: d.shipping_address.FirstName,
-      lastName: d.shipping_address.LastName,
-      dni: d.shipping_address.DNI,
-      phone: d.shipping_address.Phone,
-      address: d.shipping_address.Address,
-      city: d.shipping_address.City,
-      region: d.shipping_address.Region,
-    } : undefined;
+    const customer = d.shipping_address
+      ? {
+          firstName: d.shipping_address.FirstName,
+          lastName: d.shipping_address.LastName,
+          dni: d.shipping_address.DNI,
+          phone: d.shipping_address.Phone,
+          address: d.shipping_address.Address,
+          city: d.shipping_address.City,
+          region: d.shipping_address.Region,
+        }
+      : undefined;
 
     return new Order(
       d.IdOrder,
@@ -38,7 +40,8 @@ export class SupabaseOrderRepository implements IOrderRepository {
       d.IdCoupons,
       statusName,
       items,
-      customer
+      customer,
+      d.points_awarded === true,
     );
   }
 
@@ -57,7 +60,9 @@ export class SupabaseOrderRepository implements IOrderRepository {
   async findById(id: string): Promise<Order | null> {
     const { data, error } = await this.supabase.adminClient
       .from('order')
-      .select('*, status:status(nameStatus), shipping_address(*), order_item(*, product:product(NameProduct))')
+      .select(
+        '*, status:status(nameStatus), shipping_address(*), order_item(*, product:product(NameProduct))',
+      )
       .eq('IdOrder', id)
       .single();
     if (error && error.code === 'PGRST116') return null;
@@ -69,7 +74,9 @@ export class SupabaseOrderRepository implements IOrderRepository {
   async findByUserId(userId: string): Promise<Order[]> {
     const { data, error } = await this.supabase.adminClient
       .from('order')
-      .select('*, status:status(nameStatus), shipping_address(*), order_item(*, product:product(NameProduct))')
+      .select(
+        '*, status:status(nameStatus), shipping_address(*), order_item(*, product:product(NameProduct))',
+      )
       .eq('IdUser', userId)
       .order('Date', { ascending: false });
     if (error) throwSupabaseError(error);
@@ -79,7 +86,9 @@ export class SupabaseOrderRepository implements IOrderRepository {
   async findAll(): Promise<Order[]> {
     const { data, error } = await this.supabase.adminClient
       .from('order')
-      .select('*, status:status(nameStatus), shipping_address(*), order_item(*, product:product(NameProduct))')
+      .select(
+        '*, status:status(nameStatus), shipping_address(*), order_item(*, product:product(NameProduct))',
+      )
       .order('Date', { ascending: false });
     if (error) throwSupabaseError(error);
     return (data ?? []).map((d) => this.toEntity(d));
@@ -179,5 +188,13 @@ export class SupabaseOrderRepository implements IOrderRepository {
       .order('nameStatus');
     if (error) throwSupabaseError(error);
     return (data ?? []).map((d) => ({ id: d.IdStatus, name: d.nameStatus }));
+  }
+
+  async markPointsAwarded(orderId: string): Promise<void> {
+    const { error } = await this.supabase.adminClient
+      .from('order')
+      .update({ points_awarded: true })
+      .eq('IdOrder', orderId);
+    if (error) throwSupabaseError(error);
   }
 }

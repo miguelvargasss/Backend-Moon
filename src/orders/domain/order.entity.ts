@@ -20,6 +20,7 @@ export class Order {
       city: string;
       region: string;
     },
+    public readonly pointsAwarded: boolean = false,
   ) {}
 }
 

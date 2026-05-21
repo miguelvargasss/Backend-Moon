@@ -1,4 +1,4 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import type { ICartRepository } from '../domain/cart.repository.interface.js';
 import { CART_REPOSITORY } from '../domain/cart.repository.interface.js';
 

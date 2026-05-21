@@ -17,7 +17,10 @@ import { DeleteCategoryUseCase } from './application/delete-category.use-case.js
 import { GetSizeSystemsUseCase } from '../products/application/get-size-systems.use-case.js';
 import { CreateCategoryDto } from './dto/create-category.dto.js';
 import { UpdateCategoryDto } from './dto/update-category.dto.js';
-import { CreateSizeSystemDto, CreateSizeOptionDto } from '../products/dto/size-system.dto.js';
+import {
+  CreateSizeSystemDto,
+  CreateSizeOptionDto,
+} from '../products/dto/size-system.dto.js';
 import { AuthGuard } from '../common/guards/auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
@@ -46,7 +49,6 @@ export class CategoriesController {
     const categories = await this.listCategories.execute();
     return ApiResponse.ok(categories);
   }
-  
 
   /** POST /categories — Crear categoría (admin) */
   @Post()

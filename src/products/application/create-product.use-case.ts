@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import type { IProductRepository } from '../domain/product.repository.interface.js';
 import { PRODUCT_REPOSITORY } from '../domain/product.repository.interface.js';
 import type { CreateProductDto } from '../dto/create-product.dto.js';

@@ -15,12 +15,7 @@ import { SHIPPING_REPOSITORY } from '../../shipping/domain/shipping.repository.i
 import { ValidateCouponUseCase } from '../../coupons/application/validate-coupon.use-case.js';
 import type { ICouponRepository } from '../../coupons/domain/coupon.repository.interface.js';
 import { COUPON_REPOSITORY } from '../../coupons/domain/coupon.repository.interface.js';
-import type { IUserRepository } from '../../users/domain/user.repository.interface.js';
-import { USER_REPOSITORY } from '../../users/domain/user.repository.interface.js';
 import { ConfigService } from '@nestjs/config';
-
-/** Regla de negocio MoonPoints: 1 punto por cada S/2 gastados. */
-const SOLES_PER_POINT = 2;
 
 /**
  * CU03 — Checkout completo.
@@ -39,8 +34,6 @@ export class CreateOrderUseCase {
     private readonly shippingRepository: IShippingRepository,
     @Inject(COUPON_REPOSITORY)
     private readonly couponRepository: ICouponRepository,
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
     private readonly validateCouponUseCase: ValidateCouponUseCase,
     private readonly configService: ConfigService,
   ) {}
@@ -93,7 +86,11 @@ export class CreateOrderUseCase {
             `Variante no encontrada para "${product.name}"`,
           );
         }
-        variant = { id: found.id, stock: found.stock, price: Number(found.price) };
+        variant = {
+          id: found.id,
+          stock: found.stock,
+          price: Number(found.price),
+        };
       }
 
       // Validar stock (por variante si existe, sino producto)
@@ -139,11 +136,8 @@ export class CreateOrderUseCase {
         couponCode,
         userId,
       );
-      if (!couponResult.valid) {
-        throw new BadRequestException(couponResult.reason);
-      }
       couponId = couponResult.couponId;
-      discount = couponResult.discount ?? 0;
+      discount = couponResult.discountAmount;
     }
 
     // 4. Verificar dirección de envío
@@ -199,32 +193,16 @@ export class CreateOrderUseCase {
     // 10. Vaciar carrito
     await this.cartRepository.clearCart(userId);
 
-    // 10.5 Otorgar MoonPoints — 1 punto por cada S/SOLES_PER_POINT del total final.
-    // Envuelto en try/catch para que un fallo de fidelización no invalide el pedido.
-    const finalTotalForPoints = Math.max(0, total - discount);
-    const pointsEarned = Math.floor(finalTotalForPoints / SOLES_PER_POINT);
-    let totalPoints: number | undefined;
-    if (pointsEarned > 0) {
-      try {
-        totalPoints = await this.userRepository.addPoints(userId, pointsEarned);
-      } catch (err) {
-        // Log silencioso — el pedido ya está confirmado y debe responder éxito
-        console.error('[CreateOrder] Falló otorgar MoonPoints:', err);
-      }
-    }
+    // Cálculo estimado de MoonPoints (se otorgan realmente al confirmar — CU08).
+    // Regla: 1 punto por cada S/2 gastados, sobre el total bruto (sin descuento de cupón)
+    // para ser consistente con UpdateOrderStatusUseCase.
+    const pointsEarned = Math.floor(total / 2);
 
     // 11. Construir URL WhatsApp
     const whatsappNumber = this.configService
       .get<string>('WHATSAPP_NUMBER', '+51999159716')
       .replace('+', '');
     const finalTotal = Math.max(0, total - discount);
-
-    const itemsSummary = orderItems
-      .map(
-        (i) =>
-          `• ${i.productName} x${i.quantity} — S/ ${(i.priceAtSale * i.quantity).toFixed(2)}`,
-      )
-      .join('%0A');
 
     const whatsappMessage = encodeURIComponent(
       `🌙 *Nuevo pedido MoonPhases*\n` +
@@ -251,7 +229,6 @@ export class CreateOrderUseCase {
       discount,
       whatsappUrl,
       pointsEarned,
-      totalPoints,
     };
   }
 

@@ -16,7 +16,13 @@ import { ShippingModule } from '../shipping/shipping.module.js';
 import { UsersModule } from '../users/users.module.js';
 
 @Module({
-  imports: [CartModule, ProductsModule, CouponsModule, ShippingModule, UsersModule],
+  imports: [
+    CartModule,
+    ProductsModule,
+    CouponsModule,
+    ShippingModule,
+    UsersModule,
+  ],
   controllers: [OrdersController],
   providers: [
     CreateOrderUseCase,

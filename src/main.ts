@@ -44,13 +44,18 @@ async function bootstrap(): Promise<INestApplication> {
 
 // Ejecución local
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  bootstrap().then(async (app) => {
-    const port = process.env.PORT ?? 3000;
-    await app.listen(port);
-    new Logger('Bootstrap').log(
-      `🚀 Backend MoonPhases corriendo en: http://localhost:${port}`,
-    );
-  });
+  bootstrap()
+    .then(async (app) => {
+      const port = process.env.PORT ?? 3000;
+      await app.listen(port);
+      new Logger('Bootstrap').log(
+        `🚀 Backend MoonPhases corriendo en: http://localhost:${port}`,
+      );
+    })
+    .catch((err: unknown) => {
+      new Logger('Bootstrap').error('Error al iniciar la aplicación', err);
+      process.exit(1);
+    });
 }
 
 // Exportar para Vercel

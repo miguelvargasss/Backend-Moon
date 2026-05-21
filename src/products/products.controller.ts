@@ -80,7 +80,10 @@ export class ProductsController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin')
   async create(@Body() dto: CreateProductDto) {
-    console.log('📦 [CREATE PRODUCT] DTO recibido:', JSON.stringify(dto, null, 2));
+    console.log(
+      '📦 [CREATE PRODUCT] DTO recibido:',
+      JSON.stringify(dto, null, 2),
+    );
     const product = await this.createProduct.execute(dto);
     return ApiResponse.created(product, 'Producto creado exitosamente');
   }

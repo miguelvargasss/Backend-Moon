@@ -76,10 +76,7 @@ export interface IProductRepository {
   removeImage(imageId: string): Promise<void>;
 
   // Estilos (solo para productos tipo multiple)
-  createStyle(
-    productId: string,
-    data: CreateStyleData,
-  ): Promise<ProductStyle>;
+  createStyle(productId: string, data: CreateStyleData): Promise<ProductStyle>;
   deleteStyle(styleId: string): Promise<void>;
   deleteAllStyles(productId: string): Promise<void>;
 

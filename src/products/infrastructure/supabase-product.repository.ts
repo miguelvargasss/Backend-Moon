@@ -138,7 +138,9 @@ export class SupabaseProductRepository implements IProductRepository {
     );
 
     const styles = rawStyles.map((raw) => {
-      const sImages = allStyleImages.filter((img) => img.styleId === raw.IdStyle);
+      const sImages = allStyleImages.filter(
+        (img) => img.styleId === raw.IdStyle,
+      );
       const sVariants = allStyleVariants.filter(
         (v) => v.styleId === raw.IdStyle,
       );
@@ -265,8 +267,12 @@ export class SupabaseProductRepository implements IProductRepository {
         .order('sort_order'),
     ]);
 
-    const allImages = (allImagesRes.data ?? []).map((d) => this.toImageEntity(d));
-    const allVariants = (allVariantsRes.data ?? []).map((d) => this.toVariantEntity(d));
+    const allImages = (allImagesRes.data ?? []).map((d) =>
+      this.toImageEntity(d),
+    );
+    const allVariants = (allVariantsRes.data ?? []).map((d) =>
+      this.toVariantEntity(d),
+    );
     const allStyles = allStylesRes.data ?? [];
 
     // ── Cargar datos de estilos (imágenes + variantes) si existen ──
@@ -300,8 +306,12 @@ export class SupabaseProductRepository implements IProductRepository {
         const pStyles = allStyles
           .filter((s) => s.IdProduct === productId)
           .map((raw) => {
-            const sImages = styleImages.filter((img) => img.styleId === raw.IdStyle);
-            const sVars = styleVariants.filter((v) => v.styleId === raw.IdStyle);
+            const sImages = styleImages.filter(
+              (img) => img.styleId === raw.IdStyle,
+            );
+            const sVars = styleVariants.filter(
+              (v) => v.styleId === raw.IdStyle,
+            );
             return this.toStyleEntity(raw, sImages, sVars);
           });
         return this.toEntity(d, [], [], pStyles);
@@ -342,10 +352,7 @@ export class SupabaseProductRepository implements IProductRepository {
     return this.toEntity(created);
   }
 
-  async update(
-    id: string,
-    data: Partial<CreateProductData>,
-  ): Promise<Product> {
+  async update(id: string, data: Partial<CreateProductData>): Promise<Product> {
     const payload: Record<string, any> = {};
     if (data.name !== undefined) payload['NameProduct'] = data.name;
     if (data.price !== undefined) payload['Price'] = data.price;

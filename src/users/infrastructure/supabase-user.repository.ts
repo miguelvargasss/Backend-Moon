@@ -10,7 +10,9 @@ export class SupabaseUserRepository implements IUserRepository {
 
   private toEntity(data: Record<string, any>): User {
     // pints_user puede venir como objeto o array según el join de Supabase
-    const pintsRel = Array.isArray(data.pints_user) ? data.pints_user[0] : data.pints_user;
+    const pintsRel = Array.isArray(data.pints_user)
+      ? data.pints_user[0]
+      : data.pints_user;
     const points = pintsRel ? Number(pintsRel.points) : undefined;
 
     // role puede venir como objeto o array según el join
@@ -65,14 +67,25 @@ export class SupabaseUserRepository implements IUserRepository {
 
     // Enriquecer con created_at de auth.users
     try {
-      const { data: authData } = await this.supabase.adminClient.auth.admin.listUsers();
+      const { data: authData } =
+        await this.supabase.adminClient.auth.admin.listUsers();
       if (authData?.users) {
-        const authMap = new Map<string, string>(authData.users.map((u) => [u.id, u.created_at] as [string, string]));
-        return users.map((u) => new User(
-          u.id, u.name, u.lastName, u.email,
-          u.roleId, u.points, u.roleName,
-          (authMap.get(u.id) as string | undefined) ?? undefined,
-        ));
+        const authMap = new Map<string, string>(
+          authData.users.map((u) => [u.id, u.created_at] as [string, string]),
+        );
+        return users.map(
+          (u) =>
+            new User(
+              u.id,
+              u.name,
+              u.lastName,
+              u.email,
+              u.roleId,
+              u.points,
+              u.roleName,
+              authMap.get(u.id) ?? undefined,
+            ),
+        );
       }
     } catch {
       // Si falla la consulta de auth, devolvemos sin created_at
@@ -101,38 +114,36 @@ export class SupabaseUserRepository implements IUserRepository {
   }
 
   async addPoints(userId: string, points: number): Promise<number> {
-    if (points <= 0) {
-      const { data } = await this.supabase.adminClient
-        .from('pints_user')
-        .select('points')
-        .eq('IdUser', userId)
-        .maybeSingle();
-      return Number(data?.points ?? 0);
-    }
-
-    // Leer fila actual (si existe)
-    const { data: current, error: readErr } = await this.supabase.adminClient
+    // Usar limit(1) en lugar de maybeSingle() para tolerar filas duplicadas
+    // sin lanzar error — maybeSingle lanza si hay >1 fila, lo que silenciaba el fallo
+    const { data: rows, error: readErr } = await this.supabase.adminClient
       .from('pints_user')
       .select('IdPointsUser, points')
       .eq('IdUser', userId)
-      .maybeSingle();
+      .order('points', { ascending: false })
+      .limit(1);
+
     if (readErr) throwSupabaseError(readErr);
 
-    if (current) {
-      const newTotal = Number(current.points ?? 0) + points;
-      const { error } = await this.supabase.adminClient
+    const current = rows?.[0] ?? null;
+    const currentPoints = Number(current?.points ?? 0);
+    const newTotal = Math.max(0, currentPoints + points);
+
+    if (current?.IdPointsUser) {
+      // Fila existente — actualizar directamente por PK
+      const { error: updateErr } = await this.supabase.adminClient
         .from('pints_user')
         .update({ points: newTotal })
         .eq('IdPointsUser', current.IdPointsUser);
-      if (error) throwSupabaseError(error);
-      return newTotal;
+      if (updateErr) throwSupabaseError(updateErr);
+    } else {
+      // Sin fila — upsert con onConflict para evitar race condition
+      const { error: upsertErr } = await this.supabase.adminClient
+        .from('pints_user')
+        .upsert({ IdUser: userId, points: newTotal }, { onConflict: 'IdUser' });
+      if (upsertErr) throwSupabaseError(upsertErr);
     }
 
-    // No existe — crear fila inicial con los puntos ganados
-    const { error } = await this.supabase.adminClient
-      .from('pints_user')
-      .insert({ IdUser: userId, points });
-    if (error) throwSupabaseError(error);
-    return points;
+    return newTotal;
   }
 }

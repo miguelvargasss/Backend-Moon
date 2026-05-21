@@ -7,6 +7,7 @@ export class Coupon {
     public readonly couponQuantity: number,
     public readonly minimumAmount: number,
     public readonly discountAmount: number,
+    public readonly discountType: 'fixed' | 'percentage' = 'fixed',
     public readonly categoryId?: string,
   ) {}
 

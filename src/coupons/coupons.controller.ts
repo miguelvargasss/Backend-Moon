@@ -48,6 +48,7 @@ export class CouponsController {
       couponQuantity: dto.couponQuantity,
       minimumAmount: dto.minimumAmount,
       discountAmount: dto.discountAmount,
+      discountType: dto.discountType ?? 'fixed',
       categoryId: dto.categoryId,
     });
     return ApiResponse.created(coupon, 'Cupón creado exitosamente');

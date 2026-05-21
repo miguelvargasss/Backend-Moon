@@ -16,6 +16,7 @@ export class SupabaseCouponRepository implements ICouponRepository {
       data.CouponQuantity,
       data.MinimumAmount,
       data.DiscountAmount,
+      (data.DiscountType as 'fixed' | 'percentage') ?? 'fixed',
       data.IdCategorie,
     );
   }
@@ -50,6 +51,7 @@ export class SupabaseCouponRepository implements ICouponRepository {
         CouponQuantity: couponData.couponQuantity,
         MinimumAmount: couponData.minimumAmount,
         DiscountAmount: couponData.discountAmount,
+        DiscountType: couponData.discountType ?? 'fixed',
         IdCategorie: couponData.categoryId,
       })
       .select()
@@ -60,15 +62,24 @@ export class SupabaseCouponRepository implements ICouponRepository {
 
   async update(
     id: string,
-    couponData: Partial<Omit<Coupon, 'id' | 'isValid' | 'isExpired' | 'hasStock'>>,
+    couponData: Partial<
+      Omit<Coupon, 'id' | 'isValid' | 'isExpired' | 'hasStock'>
+    >,
   ): Promise<Coupon> {
     const payload: Record<string, any> = {};
     if (couponData.code !== undefined) payload['Code'] = couponData.code;
-    if (couponData.expirationDate !== undefined) payload['ExpirationDate'] = couponData.expirationDate;
-    if (couponData.couponQuantity !== undefined) payload['CouponQuantity'] = couponData.couponQuantity;
-    if (couponData.minimumAmount !== undefined) payload['MinimumAmount'] = couponData.minimumAmount;
-    if (couponData.discountAmount !== undefined) payload['DiscountAmount'] = couponData.discountAmount;
-    if (couponData.categoryId !== undefined) payload['IdCategorie'] = couponData.categoryId;
+    if (couponData.expirationDate !== undefined)
+      payload['ExpirationDate'] = couponData.expirationDate;
+    if (couponData.couponQuantity !== undefined)
+      payload['CouponQuantity'] = couponData.couponQuantity;
+    if (couponData.minimumAmount !== undefined)
+      payload['MinimumAmount'] = couponData.minimumAmount;
+    if (couponData.discountAmount !== undefined)
+      payload['DiscountAmount'] = couponData.discountAmount;
+    if (couponData.discountType !== undefined)
+      payload['DiscountType'] = couponData.discountType;
+    if (couponData.categoryId !== undefined)
+      payload['IdCategorie'] = couponData.categoryId;
 
     const { data, error } = await this.supabase.adminClient
       .from('coupons')

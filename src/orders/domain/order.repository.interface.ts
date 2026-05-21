@@ -17,4 +17,5 @@ export interface IOrderRepository {
   getStatusIdByName(name: string): Promise<string | null>;
   getStatusNameById(id: string): Promise<string | null>;
   findAllStatuses(): Promise<{ id: string; name: string }[]>;
+  markPointsAwarded(orderId: string): Promise<void>;
 }

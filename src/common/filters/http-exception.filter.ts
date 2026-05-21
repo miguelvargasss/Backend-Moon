@@ -31,10 +31,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const exceptionResponse = exception.getResponse();
 
       // DEBUG: Log full validation errors
-      if (status === 400) {
+      if (status === HttpStatus.BAD_REQUEST) {
         const req = ctx.getRequest();
-        this.logger.warn(`🔴 [VALIDATION ERROR] Body recibido: ${JSON.stringify(req.body, null, 2)}`);
-        this.logger.warn(`🔴 [VALIDATION ERROR] Response: ${JSON.stringify(exceptionResponse, null, 2)}`);
+        this.logger.warn(
+          `🔴 [VALIDATION ERROR] Body recibido: ${JSON.stringify(req.body, null, 2)}`,
+        );
+        this.logger.warn(
+          `🔴 [VALIDATION ERROR] Response: ${JSON.stringify(exceptionResponse, null, 2)}`,
+        );
       }
 
       // Extraer el mensaje de la excepción

@@ -15,4 +15,3 @@ export interface IUserRepository {
   /** Suma puntos al usuario (programa de fidelización MoonPoints). */
   addPoints(userId: string, points: number): Promise<number>;
 }
-
