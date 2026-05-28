@@ -9,7 +9,9 @@ const mockOrders = [
     userId: 'user-1',
     date: new Date('2026-05-13'),
     statusName: 'EN PROCESO',
-    items: [{ id: 'item-1', productName: 'Polera', quantity: 1, priceAtSale: 50 }],
+    items: [
+      { id: 'item-1', productName: 'Polera', quantity: 1, priceAtSale: 50 },
+    ],
   },
   {
     id: 'order-2',
@@ -77,7 +79,10 @@ describe('ListOrdersUseCase — HUMP07 (Historial de Pedidos)', () => {
     const result = await useCase.execute('user-1');
 
     expect(result[0].items).toBeDefined();
-    expect(result[0].items![0]).toMatchObject({ productName: 'Polera', quantity: 1 });
+    expect(result[0].items![0]).toMatchObject({
+      productName: 'Polera',
+      quantity: 1,
+    });
   });
 
   it('debería retornar un array vacío si el usuario no tiene pedidos', async () => {

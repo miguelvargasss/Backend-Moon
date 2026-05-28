@@ -14,7 +14,9 @@ import {
 export class CreateCouponDto {
   @IsString()
   @IsNotEmpty({ message: 'El código del cupón es obligatorio' })
-  @Length(1, 25, { message: 'El código del cupón debe tener entre 1 y 25 caracteres' })
+  @Length(1, 25, {
+    message: 'El código del cupón debe tener entre 1 y 25 caracteres',
+  })
   code: string;
 
   @IsDateString(

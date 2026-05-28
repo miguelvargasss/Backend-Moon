@@ -39,6 +39,8 @@ describe('LogoutUseCase — HUMP01 (Autenticación)', () => {
   it('debería propagar el error si el repositorio falla al cerrar sesión', async () => {
     mockAuthRepository.logout.mockRejectedValue(new Error('Token inválido'));
 
-    await expect(useCase.execute('bad-token')).rejects.toThrow('Token inválido');
+    await expect(useCase.execute('bad-token')).rejects.toThrow(
+      'Token inválido',
+    );
   });
 });

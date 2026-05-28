@@ -56,7 +56,10 @@ describe('CreateProductUseCase — HUMP04 (Gestión de Inventario)', () => {
     });
 
     expect(mockProductRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'Polera Luna Nueva', categoryId: 'cat-1' }),
+      expect.objectContaining({
+        name: 'Polera Luna Nueva',
+        categoryId: 'cat-1',
+      }),
     );
     expect(result).toEqual(mockProductBase);
   });
@@ -78,25 +81,45 @@ describe('CreateProductUseCase — HUMP04 (Gestión de Inventario)', () => {
 
   it('debería lanzar BadRequestException si el producto único no tiene precio', async () => {
     await expect(
-      useCase.execute({ name: 'Test', productType: 'single', statusId: 'st-1' }),
+      useCase.execute({
+        name: 'Test',
+        productType: 'single',
+        statusId: 'st-1',
+      }),
     ).rejects.toThrow(BadRequestException);
     await expect(
-      useCase.execute({ name: 'Test', productType: 'single', statusId: 'st-1' }),
+      useCase.execute({
+        name: 'Test',
+        productType: 'single',
+        statusId: 'st-1',
+      }),
     ).rejects.toThrow('El precio es obligatorio para un producto único');
   });
 
   it('debería lanzar BadRequestException si el producto múltiple no tiene estilos', async () => {
     await expect(
-      useCase.execute({ name: 'Test', productType: 'multiple', statusId: 'st-1', styles: [] }),
+      useCase.execute({
+        name: 'Test',
+        productType: 'multiple',
+        statusId: 'st-1',
+        styles: [],
+      }),
     ).rejects.toThrow(BadRequestException);
     await expect(
-      useCase.execute({ name: 'Test', productType: 'multiple', statusId: 'st-1', styles: [] }),
+      useCase.execute({
+        name: 'Test',
+        productType: 'multiple',
+        statusId: 'st-1',
+        styles: [],
+      }),
     ).rejects.toThrow('Se requiere al menos un estilo');
   });
 
   it('debería crear variantes para un producto único con tallas', async () => {
     mockProductRepository.create.mockResolvedValue(mockProductBase);
-    mockProductRepository.createVariantForProduct.mockResolvedValue({ id: 'var-1' });
+    mockProductRepository.createVariantForProduct.mockResolvedValue({
+      id: 'var-1',
+    });
     mockProductRepository.findById.mockResolvedValue(mockProductBase);
 
     await useCase.execute({
@@ -110,14 +133,24 @@ describe('CreateProductUseCase — HUMP04 (Gestión de Inventario)', () => {
       ],
     });
 
-    expect(mockProductRepository.createVariantForProduct).toHaveBeenCalledTimes(2);
+    expect(mockProductRepository.createVariantForProduct).toHaveBeenCalledTimes(
+      2,
+    );
   });
 
   it('CA2+CA3 — debería crear estilos y variantes para un producto múltiple', async () => {
-    mockProductRepository.create.mockResolvedValue({ ...mockProductBase, productType: 'multiple' });
+    mockProductRepository.create.mockResolvedValue({
+      ...mockProductBase,
+      productType: 'multiple',
+    });
     mockProductRepository.createStyle.mockResolvedValue({ id: 'style-1' });
-    mockProductRepository.createVariantForStyle.mockResolvedValue({ id: 'var-1' });
-    mockProductRepository.findById.mockResolvedValue({ ...mockProductBase, productType: 'multiple' });
+    mockProductRepository.createVariantForStyle.mockResolvedValue({
+      id: 'var-1',
+    });
+    mockProductRepository.findById.mockResolvedValue({
+      ...mockProductBase,
+      productType: 'multiple',
+    });
 
     await useCase.execute({
       name: 'Polera Colores',

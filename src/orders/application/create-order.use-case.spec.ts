@@ -87,23 +87,38 @@ describe('CreateOrderUseCase — HUMP03 (Procesamiento de Ventas)', () => {
   it('CA1 — debería lanzar BadRequestException si el carrito está vacío', async () => {
     mockCartRepository.findByUserId.mockResolvedValue([]);
 
-    await expect(useCase.execute('user-1', 'addr-1')).rejects.toThrow(BadRequestException);
-    await expect(useCase.execute('user-1', 'addr-1')).rejects.toThrow('Tu carrito está vacío');
+    await expect(useCase.execute('user-1', 'addr-1')).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(useCase.execute('user-1', 'addr-1')).rejects.toThrow(
+      'Tu carrito está vacío',
+    );
   });
 
   it('debería lanzar NotFoundException si el producto del carrito no existe', async () => {
     mockCartRepository.findByUserId.mockResolvedValue([mockCartItem]);
     mockProductRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('user-1', 'addr-1')).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute('user-1', 'addr-1')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('debería lanzar BadRequestException si no hay stock suficiente', async () => {
-    mockCartRepository.findByUserId.mockResolvedValue([{ ...mockCartItem, quantity: 20 }]);
-    mockProductRepository.findById.mockResolvedValue({ ...mockProduct, totalStock: 5 });
+    mockCartRepository.findByUserId.mockResolvedValue([
+      { ...mockCartItem, quantity: 20 },
+    ]);
+    mockProductRepository.findById.mockResolvedValue({
+      ...mockProduct,
+      totalStock: 5,
+    });
 
-    await expect(useCase.execute('user-1', 'addr-1')).rejects.toThrow(BadRequestException);
-    await expect(useCase.execute('user-1', 'addr-1')).rejects.toThrow('Stock insuficiente');
+    await expect(useCase.execute('user-1', 'addr-1')).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(useCase.execute('user-1', 'addr-1')).rejects.toThrow(
+      'Stock insuficiente',
+    );
   });
 
   it('CA4 — debería lanzar NotFoundException si la dirección de envío no existe', async () => {
@@ -112,7 +127,9 @@ describe('CreateOrderUseCase — HUMP03 (Procesamiento de Ventas)', () => {
     mockOrderRepository.getStatusIdByName.mockResolvedValue('status-1');
     mockShippingRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('user-1', 'addr-no-exist')).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute('user-1', 'addr-no-exist')).rejects.toThrow(
+      NotFoundException,
+    );
     await expect(useCase.execute('user-1', 'addr-no-exist')).rejects.toThrow(
       'Dirección de envío no encontrada',
     );
@@ -122,7 +139,9 @@ describe('CreateOrderUseCase — HUMP03 (Procesamiento de Ventas)', () => {
     mockCartRepository.findByUserId.mockResolvedValue([mockCartItem]);
     mockProductRepository.findById.mockResolvedValue(mockProduct);
     mockShippingRepository.findById.mockResolvedValue(mockAddress);
-    mockOrderRepository.getStatusIdByName.mockResolvedValue('status-en-proceso');
+    mockOrderRepository.getStatusIdByName.mockResolvedValue(
+      'status-en-proceso',
+    );
     mockOrderRepository.existsByOrderCode.mockResolvedValue(false);
     mockOrderRepository.create.mockImplementation((data: any) => ({
       id: 'order-1',
@@ -140,7 +159,9 @@ describe('CreateOrderUseCase — HUMP03 (Procesamiento de Ventas)', () => {
     mockCartRepository.findByUserId.mockResolvedValue([mockCartItem]);
     mockProductRepository.findById.mockResolvedValue(mockProduct);
     mockShippingRepository.findById.mockResolvedValue(mockAddress);
-    mockOrderRepository.getStatusIdByName.mockResolvedValue('status-en-proceso');
+    mockOrderRepository.getStatusIdByName.mockResolvedValue(
+      'status-en-proceso',
+    );
     mockOrderRepository.existsByOrderCode.mockResolvedValue(false);
     mockOrderRepository.create.mockResolvedValue(mockOrder);
     mockProductRepository.decrementProductStock.mockResolvedValue(undefined);
@@ -148,9 +169,14 @@ describe('CreateOrderUseCase — HUMP03 (Procesamiento de Ventas)', () => {
 
     await useCase.execute('user-1', 'addr-1');
 
-    expect(mockOrderRepository.getStatusIdByName).toHaveBeenCalledWith('EN PROCESO');
+    expect(mockOrderRepository.getStatusIdByName).toHaveBeenCalledWith(
+      'EN PROCESO',
+    );
     expect(mockOrderRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ statusId: 'status-en-proceso', userId: 'user-1' }),
+      expect.objectContaining({
+        statusId: 'status-en-proceso',
+        userId: 'user-1',
+      }),
       expect.any(Array),
     );
   });
@@ -159,7 +185,9 @@ describe('CreateOrderUseCase — HUMP03 (Procesamiento de Ventas)', () => {
     mockCartRepository.findByUserId.mockResolvedValue([mockCartItem]);
     mockProductRepository.findById.mockResolvedValue(mockProduct);
     mockShippingRepository.findById.mockResolvedValue(mockAddress);
-    mockOrderRepository.getStatusIdByName.mockResolvedValue('status-en-proceso');
+    mockOrderRepository.getStatusIdByName.mockResolvedValue(
+      'status-en-proceso',
+    );
     mockOrderRepository.existsByOrderCode.mockResolvedValue(false);
     mockOrderRepository.create.mockResolvedValue(mockOrder);
     mockProductRepository.decrementProductStock.mockResolvedValue(undefined);
@@ -175,7 +203,9 @@ describe('CreateOrderUseCase — HUMP03 (Procesamiento de Ventas)', () => {
     mockCartRepository.findByUserId.mockResolvedValue([mockCartItem]);
     mockProductRepository.findById.mockResolvedValue(mockProduct);
     mockShippingRepository.findById.mockResolvedValue(mockAddress);
-    mockOrderRepository.getStatusIdByName.mockResolvedValue('status-en-proceso');
+    mockOrderRepository.getStatusIdByName.mockResolvedValue(
+      'status-en-proceso',
+    );
     mockOrderRepository.existsByOrderCode.mockResolvedValue(false);
     mockOrderRepository.create.mockResolvedValue(mockOrder);
     mockProductRepository.decrementProductStock.mockResolvedValue(undefined);
@@ -183,14 +213,19 @@ describe('CreateOrderUseCase — HUMP03 (Procesamiento de Ventas)', () => {
 
     await useCase.execute('user-1', 'addr-1');
 
-    expect(mockProductRepository.decrementProductStock).toHaveBeenCalledWith('prod-1', 2);
+    expect(mockProductRepository.decrementProductStock).toHaveBeenCalledWith(
+      'prod-1',
+      2,
+    );
   });
 
   it('debería vaciar el carrito después de crear la orden', async () => {
     mockCartRepository.findByUserId.mockResolvedValue([mockCartItem]);
     mockProductRepository.findById.mockResolvedValue(mockProduct);
     mockShippingRepository.findById.mockResolvedValue(mockAddress);
-    mockOrderRepository.getStatusIdByName.mockResolvedValue('status-en-proceso');
+    mockOrderRepository.getStatusIdByName.mockResolvedValue(
+      'status-en-proceso',
+    );
     mockOrderRepository.existsByOrderCode.mockResolvedValue(false);
     mockOrderRepository.create.mockResolvedValue(mockOrder);
     mockProductRepository.decrementProductStock.mockResolvedValue(undefined);

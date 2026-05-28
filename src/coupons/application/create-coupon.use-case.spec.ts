@@ -63,9 +63,16 @@ describe('CreateCouponUseCase — HUMP05 (Gestión de Cupones)', () => {
   });
 
   it('CA2 — debería aceptar tipo de descuento porcentual', async () => {
-    const percentageCoupon = { ...couponData, discountType: 'percentage' as const, discountAmount: 15 };
+    const percentageCoupon = {
+      ...couponData,
+      discountType: 'percentage' as const,
+      discountAmount: 15,
+    };
     mockCouponRepository.findByCode.mockResolvedValue(null);
-    mockCouponRepository.create.mockResolvedValue({ id: 'c-2', ...percentageCoupon });
+    mockCouponRepository.create.mockResolvedValue({
+      id: 'c-2',
+      ...percentageCoupon,
+    });
 
     await useCase.execute(percentageCoupon);
 
@@ -97,9 +104,14 @@ describe('CreateCouponUseCase — HUMP05 (Gestión de Cupones)', () => {
   });
 
   it('debería lanzar ConflictException si el código de cupón ya existe', async () => {
-    mockCouponRepository.findByCode.mockResolvedValue({ id: 'existing', code: 'LUNA10' });
+    mockCouponRepository.findByCode.mockResolvedValue({
+      id: 'existing',
+      code: 'LUNA10',
+    });
 
-    await expect(useCase.execute(couponData)).rejects.toThrow(ConflictException);
+    await expect(useCase.execute(couponData)).rejects.toThrow(
+      ConflictException,
+    );
     await expect(useCase.execute(couponData)).rejects.toThrow(
       'El código de cupón ya existe',
     );
