@@ -29,19 +29,16 @@ export class CreateCouponUseCase {
       );
     }
 
-    // Validar que la fecha de expiración sea estrictamente HOY
+    // Validar que la fecha de expiración sea de HOY o en el FUTURO
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const expDate = new Date(data.expirationDate);
     expDate.setHours(0, 0, 0, 0);
 
-    // Comparar ISO strings para evitar desfases de zona horaria simples
-    const todayISO = today.toISOString().split('T')[0];
-    const expISO = expDate.toISOString().split('T')[0];
-
-    if (expISO !== todayISO) {
+    // Comparar los timestamps para asegurar que expDate >= today
+    if (expDate.getTime() < today.getTime()) {
       throw new BadRequestException(
-        'La fecha de expiración debe ser estrictamente la fecha de hoy.',
+        'La fecha de expiración debe ser la fecha de hoy o una fecha futura.',
       );
     }
 

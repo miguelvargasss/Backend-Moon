@@ -117,4 +117,17 @@ describe('CreateCouponUseCase — HUMP05 (Gestión de Cupones)', () => {
     );
     expect(mockCouponRepository.create).not.toHaveBeenCalled();
   });
+
+  it('debería lanzar BadRequestException si la fecha de expiración es pasada', async () => {
+    const PAST_DATE = new Date(Date.now() - 86400000 * 5); // Hace 5 días
+    const pastCoupon = { ...couponData, expirationDate: PAST_DATE };
+
+    await expect(useCase.execute(pastCoupon)).rejects.toThrow(
+      require('@nestjs/common').BadRequestException,
+    );
+    await expect(useCase.execute(pastCoupon)).rejects.toThrow(
+      'La fecha de expiración debe ser la fecha de hoy o una fecha futura.',
+    );
+    expect(mockCouponRepository.create).not.toHaveBeenCalled();
+  });
 });
