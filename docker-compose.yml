@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: moonphases-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Aquí puedes añadir las variables de entorno para tu base de datos Supabase
+      # Descomenta y reemplaza los valores cuando quieras probar localmente
+      # - DATABASE_URL=postgresql://usuario:password@host:puerto/bd
+      # - SUPABASE_KEY=tu_anon_key
+    restart: unless-stopped
