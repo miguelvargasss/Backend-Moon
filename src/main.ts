@@ -48,14 +48,14 @@ async function bootstrap(): Promise<INestApplication> {
   return app;
 }
 
-// Ejecución local
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+// Ejecución del servidor
+if (!process.env.VERCEL) {
   bootstrap()
     .then(async (app) => {
       const port = process.env.PORT ?? 3000;
-      await app.listen(port);
+      await app.listen(port, '0.0.0.0'); // Render requiere escuchar en 0.0.0.0
       new Logger('Bootstrap').log(
-        `🚀 Backend MoonPhases corriendo en: http://localhost:${port}`,
+        `🚀 Backend MoonPhases corriendo en: http://0.0.0.0:${port}`,
       );
     })
     .catch((err: unknown) => {
