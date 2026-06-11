@@ -29,9 +29,7 @@ describe('GetSizeSystemsUseCase — HUMP10 (Sistemas de Tallas)', () => {
   });
 
   it('CA1 — debería llamar a getSizeSystems del repositorio y devolver la lista', async () => {
-    const fakeSystems = [
-      { id: 'sys-1', name: 'Zapatos Adulto', options: [] },
-    ];
+    const fakeSystems = [{ id: 'sys-1', name: 'Zapatos Adulto', options: [] }];
     mockProductRepository.getSizeSystems.mockResolvedValue(fakeSystems);
 
     const result = await useCase.execute();

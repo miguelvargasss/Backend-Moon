@@ -28,13 +28,20 @@ describe('GetOrderDetailUseCase — HUMP07', () => {
   it('debería lanzar NotFoundException si no existe', async () => {
     mockOrderRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('inv', 'u-1', false)).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute('inv', 'u-1', false)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('debería lanzar ForbiddenException si no es dueño ni admin', async () => {
-    mockOrderRepository.findById.mockResolvedValue({ id: 'ord-1', userId: 'other-user' });
+    mockOrderRepository.findById.mockResolvedValue({
+      id: 'ord-1',
+      userId: 'other-user',
+    });
 
-    await expect(useCase.execute('ord-1', 'u-1', false)).rejects.toThrow(ForbiddenException);
+    await expect(useCase.execute('ord-1', 'u-1', false)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('CA2 — debería devolver detalle si es el dueño', async () => {

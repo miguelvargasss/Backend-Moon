@@ -25,7 +25,9 @@ describe('DeleteProductImageUseCase — HUMP04', () => {
   it('debería lanzar NotFoundException si el producto no existe', async () => {
     mockProductRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('inv', 'img-1')).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute('inv', 'img-1')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('CA7 — debería eliminar la imagen', async () => {

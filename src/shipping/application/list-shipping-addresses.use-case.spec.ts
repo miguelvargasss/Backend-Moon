@@ -17,7 +17,9 @@ describe('ListShippingAddressesUseCase — HUMP11', () => {
       ],
     }).compile();
 
-    useCase = module.get<ListShippingAddressesUseCase>(ListShippingAddressesUseCase);
+    useCase = module.get<ListShippingAddressesUseCase>(
+      ListShippingAddressesUseCase,
+    );
   });
 
   it('CA1 — debería devolver direcciones del usuario', async () => {

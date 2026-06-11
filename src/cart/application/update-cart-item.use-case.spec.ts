@@ -21,7 +21,10 @@ describe('UpdateCartItemUseCase — HUMP02', () => {
   });
 
   it('CA3 — debería actualizar la cantidad', async () => {
-    mockCartRepository.updateQuantity.mockResolvedValue({ id: 'item-1', quantity: 5 });
+    mockCartRepository.updateQuantity.mockResolvedValue({
+      id: 'item-1',
+      quantity: 5,
+    });
 
     const result = await useCase.execute('item-1', 5);
 

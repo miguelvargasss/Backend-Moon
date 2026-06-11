@@ -32,7 +32,7 @@ describe('DeleteCategoryUseCase — HUMP09 (Categorías)', () => {
 
   it('CA4 — debería eliminar si la categoría existe', async () => {
     const id = 'cat-1';
-    
+
     mockCategoryRepository.findById.mockResolvedValue({ id, name: 'Poleras' });
     mockCategoryRepository.delete.mockResolvedValue(undefined);
 

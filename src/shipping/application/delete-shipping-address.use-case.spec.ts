@@ -17,7 +17,9 @@ describe('DeleteShippingAddressUseCase — HUMP11', () => {
       ],
     }).compile();
 
-    useCase = module.get<DeleteShippingAddressUseCase>(DeleteShippingAddressUseCase);
+    useCase = module.get<DeleteShippingAddressUseCase>(
+      DeleteShippingAddressUseCase,
+    );
   });
 
   it('CA3 — debería eliminar la dirección', async () => {

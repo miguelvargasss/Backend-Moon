@@ -41,7 +41,9 @@ describe('DeleteProductUseCase — HUMP04 (Productos)', () => {
 
     const result = await useCase.execute(id);
 
-    expect(mockProductRepository.update).toHaveBeenCalledWith(id, { statusId: '__INACTIVE__' });
+    expect(mockProductRepository.update).toHaveBeenCalledWith(id, {
+      statusId: '__INACTIVE__',
+    });
     expect(result).toEqual({ action: 'deactivated' });
   });
 

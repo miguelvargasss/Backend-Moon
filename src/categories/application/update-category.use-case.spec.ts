@@ -33,8 +33,11 @@ describe('UpdateCategoryUseCase — HUMP09 (Categorías)', () => {
   it('CA3 — debería actualizar si la categoría existe', async () => {
     const id = 'cat-1';
     const data = { name: 'Pantalones Ajustados' };
-    
-    mockCategoryRepository.findById.mockResolvedValue({ id, name: 'Pantalones' });
+
+    mockCategoryRepository.findById.mockResolvedValue({
+      id,
+      name: 'Pantalones',
+    });
     mockCategoryRepository.update.mockResolvedValue({ id, ...data });
 
     const result = await useCase.execute(id, data);
@@ -47,9 +50,9 @@ describe('UpdateCategoryUseCase — HUMP09 (Categorías)', () => {
   it('CA3 — debería lanzar NotFoundException si no existe', async () => {
     mockCategoryRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('invalid-id', { name: 'test' })).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(
+      useCase.execute('invalid-id', { name: 'test' }),
+    ).rejects.toThrow(NotFoundException);
     expect(mockCategoryRepository.update).not.toHaveBeenCalled();
   });
 });

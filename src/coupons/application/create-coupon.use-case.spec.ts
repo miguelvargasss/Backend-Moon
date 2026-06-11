@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, BadRequestException } from '@nestjs/common';
 import { CreateCouponUseCase } from './create-coupon.use-case';
 import { COUPON_REPOSITORY } from '../domain/coupon.repository.interface';
 
@@ -123,7 +123,7 @@ describe('CreateCouponUseCase — HUMP05 (Gestión de Cupones)', () => {
     const pastCoupon = { ...couponData, expirationDate: PAST_DATE };
 
     await expect(useCase.execute(pastCoupon)).rejects.toThrow(
-      require('@nestjs/common').BadRequestException,
+      BadRequestException,
     );
     await expect(useCase.execute(pastCoupon)).rejects.toThrow(
       'La fecha de expiración debe ser la fecha de hoy o una fecha futura.',
