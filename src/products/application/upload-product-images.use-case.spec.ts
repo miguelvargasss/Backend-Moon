@@ -65,11 +65,11 @@ describe('UploadProductImagesUseCase — HUMP04', () => {
       error: null,
     });
     mockSupabaseService.adminClient.storage.getPublicUrl.mockReturnValue({
-      data: { publicUrl: 'http://img.com/test.png' },
+      data: { publicUrl: 'https://img.com/test.png' },
     });
     mockProductRepository.addImage.mockResolvedValue({
       id: 'img-1',
-      url: 'http://img.com/test.png',
+      url: 'https://img.com/test.png',
     });
 
     const result = await useCase.execute(id, mockFile);
@@ -78,9 +78,9 @@ describe('UploadProductImagesUseCase — HUMP04', () => {
     expect(mockProductRepository.addImage).toHaveBeenCalledWith(
       id,
       null,
-      'http://img.com/test.png',
+      'https://img.com/test.png',
     );
-    expect(result).toEqual({ id: 'img-1', url: 'http://img.com/test.png' });
+    expect(result).toEqual({ id: 'img-1', url: 'https://img.com/test.png' });
   });
 
   it('debería lanzar Error si la subida falla', async () => {

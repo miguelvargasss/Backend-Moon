@@ -4,6 +4,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { randomInt } from 'crypto';
 import type { IOrderRepository } from '../domain/order.repository.interface.js';
 import { ORDER_REPOSITORY } from '../domain/order.repository.interface.js';
 import type { ICartRepository } from '../../cart/domain/cart.repository.interface.js';
@@ -240,7 +241,7 @@ export class CreateOrderUseCase {
 
     do {
       code = Array.from({ length: 7 }, () =>
-        chars.charAt(Math.floor(Math.random() * chars.length)),
+        chars.charAt(randomInt(0, chars.length)),
       ).join('');
       exists = await this.orderRepository.existsByOrderCode(code);
     } while (exists);

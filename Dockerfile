@@ -14,7 +14,8 @@ RUN npm ci
 # ---- Builder Stage ----
 FROM base AS builder
 COPY --from=dependencies /app/node_modules ./node_modules
-COPY . .
+COPY package*.json tsconfig*.json nest-cli.json ./
+COPY src/ ./src/
 # Compilamos NestJS
 RUN npm run build
 
@@ -33,6 +34,9 @@ COPY --from=builder /app/dist ./dist
 
 # Establecemos el entorno en producción
 ENV NODE_ENV=production
+
+# Cambiamos al usuario sin privilegios por seguridad (SonarQube)
+USER node
 
 # Exponemos el puerto de NestJS
 EXPOSE 3000

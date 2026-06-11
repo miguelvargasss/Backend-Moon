@@ -55,7 +55,7 @@ if (!process.env.VERCEL) {
       const port = process.env.PORT ?? 3000;
       await app.listen(port, '0.0.0.0'); // Render requiere escuchar en 0.0.0.0
       new Logger('Bootstrap').log(
-        `🚀 Backend MoonPhases corriendo en: http://0.0.0.0:${port}`,
+        `🚀 Backend MoonPhases corriendo en: http://localhost:${port}`,
       );
     })
     .catch((err: unknown) => {
