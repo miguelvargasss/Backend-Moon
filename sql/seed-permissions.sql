@@ -7,130 +7,141 @@
 -- admin:     06e75273-0802-4cb8-b630-462be53098e2
 -- comprador: 479584cc-1d0f-4497-9e6a-d3993442d47a
 
--- ══════════════════════════════════════════════════════════════
--- PASO 1: Insertar todos los permisos (módulos + acciones)
--- ══════════════════════════════════════════════════════════════
+DO $$ 
+DECLARE
+  -- Módulos
+  m_products CONSTANT text := 'products';
+  m_categories CONSTANT text := 'categories';
+  m_orders CONSTANT text := 'orders';
+  m_coupons CONSTANT text := 'coupons';
+  m_cart CONSTANT text := 'cart';
+  m_users CONSTANT text := 'users';
+  m_shipping CONSTANT text := 'shipping';
+  m_pints_user CONSTANT text := 'pints_user';
+  m_product_images CONSTANT text := 'product_images';
 
-INSERT INTO permits ("IdPermits", "moduleName", "actionName") VALUES
+  -- Acciones
+  a_create CONSTANT text := 'create';
+  a_read CONSTANT text := 'read';
+  a_update CONSTANT text := 'update';
+  a_delete CONSTANT text := 'delete';
+  a_list CONSTANT text := 'list';
+  a_read_own CONSTANT text := 'read_own';
+  a_read_all CONSTANT text := 'read_all';
+  a_list_own CONSTANT text := 'list_own';
+  a_list_all CONSTANT text := 'list_all';
+  a_update_status CONSTANT text := 'update_status';
+  a_cancel_own CONSTANT text := 'cancel_own';
+  a_validate CONSTANT text := 'validate';
+  a_add CONSTANT text := 'add';
+  a_remove CONSTANT text := 'remove';
+  a_clear CONSTANT text := 'clear';
+  a_update_own CONSTANT text := 'update_own';
+  a_update_all CONSTANT text := 'update_all';
 
-  -- ── Módulo: products ──────────────────────────────────────
-  (gen_random_uuid(), 'products', 'create'),
-  (gen_random_uuid(), 'products', 'read'),
-  (gen_random_uuid(), 'products', 'update'),
-  (gen_random_uuid(), 'products', 'delete'),
-  (gen_random_uuid(), 'products', 'list'),
+  -- Roles IDs
+  role_admin CONSTANT uuid := '06e75273-0802-4cb8-b630-462be53098e2'::uuid;
+  role_buyer CONSTANT uuid := '479584cc-1d0f-4497-9e6a-d3993442d47a'::uuid;
+BEGIN
 
-  -- ── Módulo: categories ────────────────────────────────────
-  (gen_random_uuid(), 'categories', 'create'),
-  (gen_random_uuid(), 'categories', 'read'),
-  (gen_random_uuid(), 'categories', 'update'),
-  (gen_random_uuid(), 'categories', 'delete'),
-  (gen_random_uuid(), 'categories', 'list'),
+  -- ══════════════════════════════════════════════════════════════
+  -- PASO 1: Insertar todos los permisos (módulos + acciones)
+  -- ══════════════════════════════════════════════════════════════
+  INSERT INTO permits ("IdPermits", "moduleName", "actionName") VALUES
+    (gen_random_uuid(), m_products, a_create),
+    (gen_random_uuid(), m_products, a_read),
+    (gen_random_uuid(), m_products, a_update),
+    (gen_random_uuid(), m_products, a_delete),
+    (gen_random_uuid(), m_products, a_list),
 
-  -- ── Módulo: orders ────────────────────────────────────────
-  (gen_random_uuid(), 'orders', 'create'),
-  (gen_random_uuid(), 'orders', 'read_own'),
-  (gen_random_uuid(), 'orders', 'read_all'),
-  (gen_random_uuid(), 'orders', 'list_own'),
-  (gen_random_uuid(), 'orders', 'list_all'),
-  (gen_random_uuid(), 'orders', 'update_status'),
-  (gen_random_uuid(), 'orders', 'cancel_own'),
+    (gen_random_uuid(), m_categories, a_create),
+    (gen_random_uuid(), m_categories, a_read),
+    (gen_random_uuid(), m_categories, a_update),
+    (gen_random_uuid(), m_categories, a_delete),
+    (gen_random_uuid(), m_categories, a_list),
 
-  -- ── Módulo: coupons ───────────────────────────────────────
-  (gen_random_uuid(), 'coupons', 'create'),
-  (gen_random_uuid(), 'coupons', 'read'),
-  (gen_random_uuid(), 'coupons', 'update'),
-  (gen_random_uuid(), 'coupons', 'delete'),
-  (gen_random_uuid(), 'coupons', 'list'),
-  (gen_random_uuid(), 'coupons', 'validate'),
+    (gen_random_uuid(), m_orders, a_create),
+    (gen_random_uuid(), m_orders, a_read_own),
+    (gen_random_uuid(), m_orders, a_read_all),
+    (gen_random_uuid(), m_orders, a_list_own),
+    (gen_random_uuid(), m_orders, a_list_all),
+    (gen_random_uuid(), m_orders, a_update_status),
+    (gen_random_uuid(), m_orders, a_cancel_own),
 
-  -- ── Módulo: cart ──────────────────────────────────────────
-  (gen_random_uuid(), 'cart', 'add'),
-  (gen_random_uuid(), 'cart', 'remove'),
-  (gen_random_uuid(), 'cart', 'read_own'),
-  (gen_random_uuid(), 'cart', 'clear'),
+    (gen_random_uuid(), m_coupons, a_create),
+    (gen_random_uuid(), m_coupons, a_read),
+    (gen_random_uuid(), m_coupons, a_update),
+    (gen_random_uuid(), m_coupons, a_delete),
+    (gen_random_uuid(), m_coupons, a_list),
+    (gen_random_uuid(), m_coupons, a_validate),
 
-  -- ── Módulo: users ─────────────────────────────────────────
-  (gen_random_uuid(), 'users', 'read_own'),
-  (gen_random_uuid(), 'users', 'read_all'),
-  (gen_random_uuid(), 'users', 'update_own'),
-  (gen_random_uuid(), 'users', 'update_all'),
-  (gen_random_uuid(), 'users', 'delete'),
+    (gen_random_uuid(), m_cart, a_add),
+    (gen_random_uuid(), m_cart, a_remove),
+    (gen_random_uuid(), m_cart, a_read_own),
+    (gen_random_uuid(), m_cart, a_clear),
 
-  -- ── Módulo: shipping ──────────────────────────────────────
-  (gen_random_uuid(), 'shipping', 'create'),
-  (gen_random_uuid(), 'shipping', 'read_own'),
-  (gen_random_uuid(), 'shipping', 'read_all'),
-  (gen_random_uuid(), 'shipping', 'update'),
-  (gen_random_uuid(), 'shipping', 'delete'),
+    (gen_random_uuid(), m_users, a_read_own),
+    (gen_random_uuid(), m_users, a_read_all),
+    (gen_random_uuid(), m_users, a_update_own),
+    (gen_random_uuid(), m_users, a_update_all),
+    (gen_random_uuid(), m_users, a_delete),
 
-  -- ── Módulo: pints_user (puntos) ───────────────────────────
-  (gen_random_uuid(), 'pints_user', 'read_own'),
-  (gen_random_uuid(), 'pints_user', 'read_all'),
-  (gen_random_uuid(), 'pints_user', 'update'),
+    (gen_random_uuid(), m_shipping, a_create),
+    (gen_random_uuid(), m_shipping, a_read_own),
+    (gen_random_uuid(), m_shipping, a_read_all),
+    (gen_random_uuid(), m_shipping, a_update),
+    (gen_random_uuid(), m_shipping, a_delete),
 
-  -- ── Módulo: product_images ────────────────────────────────
-  (gen_random_uuid(), 'product_images', 'create'),
-  (gen_random_uuid(), 'product_images', 'read'),
-  (gen_random_uuid(), 'product_images', 'delete')
+    (gen_random_uuid(), m_pints_user, a_read_own),
+    (gen_random_uuid(), m_pints_user, a_read_all),
+    (gen_random_uuid(), m_pints_user, a_update),
 
-ON CONFLICT DO NOTHING;
+    (gen_random_uuid(), m_product_images, a_create),
+    (gen_random_uuid(), m_product_images, a_read),
+    (gen_random_uuid(), m_product_images, a_delete)
+  ON CONFLICT DO NOTHING;
 
+  -- ══════════════════════════════════════════════════════════════
+  -- PASO 2: Asignar TODOS los permisos al rol ADMIN
+  -- ══════════════════════════════════════════════════════════════
+  INSERT INTO role_permits ("IdRolePermits", "IdPermits", "IdRole")
+  SELECT
+    gen_random_uuid(),
+    p."IdPermits",
+    role_admin
+  FROM permits p
+  ON CONFLICT DO NOTHING;
 
--- ══════════════════════════════════════════════════════════════
--- PASO 2: Asignar TODOS los permisos al rol ADMIN
--- (admin tiene acceso completo a todo el sistema)
--- ══════════════════════════════════════════════════════════════
+  -- ══════════════════════════════════════════════════════════════
+  -- PASO 3: Asignar permisos LIMITADOS al rol COMPRADOR
+  -- ══════════════════════════════════════════════════════════════
+  INSERT INTO role_permits ("IdRolePermits", "IdPermits", "IdRole")
+  SELECT
+    gen_random_uuid(),
+    p."IdPermits",
+    role_buyer
+  FROM permits p
+  WHERE
+    ("moduleName" = m_products      AND "actionName" IN (a_read, a_list))
+    OR ("moduleName" = m_categories  AND "actionName" IN (a_read, a_list))
+    OR ("moduleName" = m_orders      AND "actionName" IN (a_create, a_read_own, a_list_own, a_cancel_own))
+    OR ("moduleName" = m_coupons     AND "actionName" IN (a_validate))
+    OR ("moduleName" = m_cart        AND "actionName" IN (a_add, a_remove, a_read_own, a_clear))
+    OR ("moduleName" = m_users       AND "actionName" IN (a_read_own, a_update_own))
+    OR ("moduleName" = m_shipping    AND "actionName" IN (a_create, a_read_own))
+    OR ("moduleName" = m_pints_user  AND "actionName" IN (a_read_own))
+    OR ("moduleName" = m_product_images AND "actionName" IN (a_read))
+  ON CONFLICT DO NOTHING;
 
-INSERT INTO role_permits ("IdRolePermits", "IdPermits", "IdRole")
-SELECT
-  gen_random_uuid(),
-  p."IdPermits",
-  '06e75273-0802-4cb8-b630-462be53098e2'::uuid  -- admin
-FROM permits p
-ON CONFLICT DO NOTHING;
-
-
--- ══════════════════════════════════════════════════════════════
--- PASO 3: Asignar permisos LIMITADOS al rol COMPRADOR
--- ══════════════════════════════════════════════════════════════
-
-INSERT INTO role_permits ("IdRolePermits", "IdPermits", "IdRole")
-SELECT
-  gen_random_uuid(),
-  p."IdPermits",
-  '479584cc-1d0f-4497-9e6a-d3993442d47a'::uuid  -- comprador
-FROM permits p
-WHERE
-  -- Productos: solo ver y listar
-  ("moduleName" = 'products'      AND "actionName" IN ('read', 'list'))
-  -- Categorías: solo ver y listar
-  OR ("moduleName" = 'categories'  AND "actionName" IN ('read', 'list'))
-  -- Órdenes: crear, ver las propias, listar las propias, cancelar las propias
-  OR ("moduleName" = 'orders'      AND "actionName" IN ('create', 'read_own', 'list_own', 'cancel_own'))
-  -- Cupones: solo validar (aplicar un cupón en su compra)
-  OR ("moduleName" = 'coupons'     AND "actionName" IN ('validate'))
-  -- Carrito: acceso completo a su propio carrito
-  OR ("moduleName" = 'cart'        AND "actionName" IN ('add', 'remove', 'read_own', 'clear'))
-  -- Usuarios: ver y editar su propio perfil
-  OR ("moduleName" = 'users'       AND "actionName" IN ('read_own', 'update_own'))
-  -- Envío: crear y ver sus propias direcciones
-  OR ("moduleName" = 'shipping'    AND "actionName" IN ('create', 'read_own'))
-  -- Puntos: solo ver sus propios puntos
-  OR ("moduleName" = 'pints_user'  AND "actionName" IN ('read_own'))
-  -- Imágenes de productos: solo ver
-  OR ("moduleName" = 'product_images' AND "actionName" IN ('read'))
-ON CONFLICT DO NOTHING;
-
+END $$;
 
 -- ══════════════════════════════════════════════════════════════
 -- VERIFICACIÓN: Contar permisos asignados por rol
 -- ══════════════════════════════════════════════════════════════
-
 SELECT
   r."nameRole",
   COUNT(rp."IdRolePermits") AS total_permisos
 FROM role r
 LEFT JOIN role_permits rp ON r."IdRole" = rp."IdRole"
 GROUP BY r."nameRole"
-ORDER BY r."nameRole";
+ORDER BY r."nameRole" ASC;

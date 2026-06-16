@@ -12,9 +12,6 @@ export class AppController {
 
   @Get('health')
   healthCheck() {
-    return {
-      status: 'ok',
-      message: 'Backend Moon Phases API is running',
-    };
+    return this.health();
   }
 }

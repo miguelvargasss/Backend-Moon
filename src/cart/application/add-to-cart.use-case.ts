@@ -9,6 +9,7 @@ import { CART_REPOSITORY } from '../domain/cart.repository.interface.js';
 import type { IProductRepository } from '../../products/domain/product.repository.interface.js';
 import { PRODUCT_REPOSITORY } from '../../products/domain/product.repository.interface.js';
 import { ProductVariant } from '../../products/domain/product-variant.entity.js';
+import { Product } from '../../products/domain/product.entity.js';
 
 /**
  * CU02 — Agregar producto al carrito.
@@ -28,39 +29,12 @@ export class AddToCartUseCase {
     quantity: number,
     variantId?: string,
   ) {
-    // 1. Verificar que el producto existe
     const product = await this.productRepository.findById(productId);
-    if (!product) {
-      throw new NotFoundException('Producto no encontrado');
-    }
+    this.ensureProductExists(product);
 
-    // 2. Resolver stock disponible
-    let availableStock = product.totalStock;
-    let variant: ProductVariant | undefined;
+    const availableStock = this.getAvailableStock(product, variantId);
+    this.ensureSufficientStock(availableStock, quantity);
 
-    if (variantId) {
-      // Buscar la variante específica
-      if (product.productType === 'single') {
-        variant = product.variants.find((v) => v.id === variantId);
-      } else {
-        // multiple: buscar en estilos
-        for (const style of product.styles) {
-          variant = style.variants.find((v) => v.id === variantId);
-          if (variant) break;
-        }
-      }
-      if (!variant) {
-        throw new NotFoundException('Variante no encontrada');
-      }
-      availableStock = variant.stock;
-    }
-
-    // 3. Verificar stock
-    if (availableStock <= 0) {
-      throw new BadRequestException('Producto sin stock disponible');
-    }
-
-    // 4. Verificar si ya está en el carrito
     const existingItem = await this.cartRepository.findExistingItem(
       userId,
       productId,
@@ -68,21 +42,9 @@ export class AddToCartUseCase {
     );
 
     if (existingItem) {
-      // Sumar cantidad
       const newQuantity = existingItem.quantity + quantity;
-      if (newQuantity > availableStock) {
-        throw new BadRequestException(
-          `Stock insuficiente. Disponible: ${availableStock}, en carrito: ${existingItem.quantity}`,
-        );
-      }
+      this.ensureSufficientStockForUpdate(availableStock, existingItem.quantity, newQuantity);
       return this.cartRepository.updateQuantity(existingItem.id, newQuantity);
-    }
-
-    // 5. Verificar que la cantidad no excede el stock
-    if (quantity > availableStock) {
-      throw new BadRequestException(
-        `Stock insuficiente. Disponible: ${availableStock}`,
-      );
     }
 
     return this.cartRepository.addItem(
@@ -91,5 +53,54 @@ export class AddToCartUseCase {
       quantity,
       variantId ?? null,
     );
+  }
+
+  private ensureProductExists(product: Product | null): asserts product is Product {
+    if (!product) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+  }
+
+  private getAvailableStock(product: Product, variantId?: string): number {
+    if (!variantId) {
+      return product.totalStock;
+    }
+
+    let variant: ProductVariant | undefined;
+    if (product.productType === 'single') {
+      variant = product.variants.find((v) => v.id === variantId);
+    } else {
+      for (const style of product.styles) {
+        variant = style.variants.find((v) => v.id === variantId);
+        if (variant) break;
+      }
+    }
+
+    if (!variant) {
+      throw new NotFoundException('Variante no encontrada');
+    }
+    
+    return variant.stock;
+  }
+
+  private ensureSufficientStock(availableStock: number, requestedQuantity: number): void {
+    if (availableStock <= 0) {
+      throw new BadRequestException('Producto sin stock disponible');
+    }
+    if (requestedQuantity > availableStock) {
+      throw new BadRequestException(`Stock insuficiente. Disponible: ${availableStock}`);
+    }
+  }
+
+  private ensureSufficientStockForUpdate(
+    availableStock: number, 
+    currentQuantity: number, 
+    newQuantity: number
+  ): void {
+    if (newQuantity > availableStock) {
+      throw new BadRequestException(
+        `Stock insuficiente. Disponible: ${availableStock}, en carrito: ${currentQuantity}`,
+      );
+    }
   }
 }

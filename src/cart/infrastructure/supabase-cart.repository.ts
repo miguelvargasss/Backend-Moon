@@ -108,12 +108,7 @@ export class SupabaseCartRepository implements ICartRepository {
       const variant = d.IdVariant ? variantsMap.get(d.IdVariant) : null;
 
       // Precio: variante > producto
-      const price =
-        variant?.price != null
-          ? Number(variant.price)
-          : product?.Price != null
-            ? Number(product.Price)
-            : 0;
+      const price = Number(variant?.price ?? product?.Price ?? 0);
 
       // Imagen
       const image = productImageMap.get(d.IdProduct) ?? null;

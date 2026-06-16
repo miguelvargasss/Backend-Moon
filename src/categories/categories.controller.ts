@@ -9,6 +9,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Inject,
 } from '@nestjs/common';
 import { ListCategoriesUseCase } from './application/list-categories.use-case.js';
 import { CreateCategoryUseCase } from './application/create-category.use-case.js';
@@ -27,7 +28,7 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import { ApiResponse } from '../common/dto/api-response.dto.js';
 import type { IProductRepository } from '../products/domain/product.repository.interface.js';
 import { PRODUCT_REPOSITORY } from '../products/domain/product.repository.interface.js';
-import { Inject } from '@nestjs/common';
+
 
 @Controller('categories')
 export class CategoriesController {
