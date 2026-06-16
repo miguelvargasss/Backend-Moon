@@ -5,10 +5,8 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import type { IOrderRepository } from '../domain/order.repository.interface.js';
-import { ORDER_REPOSITORY } from '../domain/order.repository.interface.js';
-import type { IUserRepository } from '../../users/domain/user.repository.interface.js';
-import { USER_REPOSITORY } from '../../users/domain/user.repository.interface.js';
+import { type IOrderRepository, ORDER_REPOSITORY } from '../domain/order.repository.interface.js';
+import { type IUserRepository, USER_REPOSITORY } from '../../users/domain/user.repository.interface.js';
 
 /** Regla de negocio MoonPoints: 1 punto por cada S/2 gastados (granularidad 0.5). */
 const SOLES_PER_POINT = 2;
@@ -35,7 +33,6 @@ export class UpdateOrderStatusUseCase {
   ) {}
 
   async execute(orderId: string, newStatus: string) {
-    // 1. Buscar la orden
     const order = await this.orderRepository.findById(orderId);
     if (!order) {
       throw new NotFoundException('Pedido no encontrado');
@@ -43,7 +40,6 @@ export class UpdateOrderStatusUseCase {
 
     const currentStatusName = order.statusName ?? 'DESCONOCIDO';
 
-    // 2. Bloquear si ya está en estado terminal
     if (
       currentStatusName === 'FINALIZADO' ||
       currentStatusName === 'CANCELADO'
@@ -53,7 +49,6 @@ export class UpdateOrderStatusUseCase {
       );
     }
 
-    // 3. Validar que el nuevo estado existe en la BD
     const newStatusId = await this.orderRepository.getStatusIdByName(newStatus);
     if (!newStatusId) {
       throw new BadRequestException(
@@ -61,56 +56,10 @@ export class UpdateOrderStatusUseCase {
       );
     }
 
-    // 4. Actualizar estado y registrar en historial
     await this.orderRepository.updateStatus(orderId, newStatusId);
     await this.orderRepository.addHistory(orderId);
 
-    // 5. MoonPoints: solo al confirmar Y solo si no se otorgaron antes (idempotencia)
-    let pointsAwarded = 0;
-    let pointsWarning: string | null = null;
-
-    if (newStatus === 'CONFIRMADO' && !order.pointsAwarded) {
-      try {
-        const items = await this.orderRepository.findItemsByOrderId(orderId);
-
-        if (items.length === 0) {
-          this.logger.warn(
-            `[MoonPoints] Pedido ${orderId} no tiene ítems — no se calculan puntos.`,
-          );
-        } else {
-          const orderTotal = items.reduce(
-            (sum, item) =>
-              sum + Number(item.priceAtSale) * Number(item.quantity),
-            0,
-          );
-          pointsAwarded = roundHalf(orderTotal / SOLES_PER_POINT);
-
-          this.logger.log(
-            `[MoonPoints] Pedido ${orderId} | Total: S/${orderTotal.toFixed(2)} | Puntos: ${pointsAwarded}`,
-          );
-
-          if (pointsAwarded > 0) {
-            const newTotal = await this.userRepository.addPoints(
-              order.userId,
-              pointsAwarded,
-            );
-            // Marcar la orden como ya acreditada para evitar duplicados
-            await this.orderRepository.markPointsAwarded(orderId);
-            this.logger.log(
-              `[MoonPoints] Usuario ${order.userId} ahora tiene ${newTotal} puntos.`,
-            );
-          }
-        }
-      } catch (err: any) {
-        // No revertir el cambio de estado, pero reportar el fallo al llamador
-        pointsWarning = `No se pudieron otorgar MoonPoints: ${err?.message ?? 'error desconocido'}`;
-        this.logger.error(`[MoonPoints] ${pointsWarning}`, err?.stack);
-      }
-    } else if (newStatus === 'CONFIRMADO' && order.pointsAwarded) {
-      this.logger.log(
-        `[MoonPoints] Pedido ${orderId} ya tenía puntos acreditados — omitiendo.`,
-      );
-    }
+    const { pointsAwarded, pointsWarning } = await this.awardMoonPoints(order, newStatus);
 
     return {
       orderId,
@@ -119,5 +68,52 @@ export class UpdateOrderStatusUseCase {
       pointsAwarded,
       ...(pointsWarning ? { pointsWarning } : {}),
     };
+  }
+
+  private async awardMoonPoints(order: any, newStatus: string) {
+    let pointsAwarded = 0;
+    let pointsWarning: string | null = null;
+
+    if (newStatus !== 'CONFIRMADO') {
+      return { pointsAwarded, pointsWarning };
+    }
+
+    if (order.pointsAwarded) {
+      this.logger.log(`[MoonPoints] Pedido ${order.id} ya tenía puntos acreditados — omitiendo.`);
+      return { pointsAwarded, pointsWarning };
+    }
+
+    try {
+      const items = await this.orderRepository.findItemsByOrderId(order.id);
+
+      if (items.length === 0) {
+        this.logger.warn(`[MoonPoints] Pedido ${order.id} no tiene ítems — no se calculan puntos.`);
+        return { pointsAwarded, pointsWarning };
+      }
+
+      const orderTotal = items.reduce(
+        (sum: number, item: any) => sum + Number(item.priceAtSale) * Number(item.quantity),
+        0,
+      );
+      pointsAwarded = roundHalf(orderTotal / SOLES_PER_POINT);
+
+      this.logger.log(
+        `[MoonPoints] Pedido ${order.id} | Total: S/${orderTotal.toFixed(2)} | Puntos: ${pointsAwarded}`,
+      );
+
+      if (pointsAwarded > 0) {
+        const newTotal = await this.userRepository.addPoints(
+          order.userId,
+          pointsAwarded,
+        );
+        await this.orderRepository.markPointsAwarded(order.id);
+        this.logger.log(`[MoonPoints] Usuario ${order.userId} ahora tiene ${newTotal} puntos.`);
+      }
+    } catch (err: any) {
+      pointsWarning = `No se pudieron otorgar MoonPoints: ${err?.message ?? 'error desconocido'}`;
+      this.logger.error(`[MoonPoints] ${pointsWarning}`, err?.stack);
+    }
+
+    return { pointsAwarded, pointsWarning };
   }
 }

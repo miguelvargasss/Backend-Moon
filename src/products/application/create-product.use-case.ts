@@ -1,6 +1,5 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
-import type { IProductRepository } from '../domain/product.repository.interface.js';
-import { PRODUCT_REPOSITORY } from '../domain/product.repository.interface.js';
+import { type IProductRepository, PRODUCT_REPOSITORY } from '../domain/product.repository.interface.js';
 import type { CreateProductDto } from '../dto/create-product.dto.js';
 
 @Injectable()
@@ -11,7 +10,6 @@ export class CreateProductUseCase {
   ) {}
 
   async execute(data: CreateProductDto) {
-    // ── Validaciones por tipo ──
     if (data.productType === 'single') {
       if (data.price == null) {
         throw new BadRequestException(
@@ -28,7 +26,6 @@ export class CreateProductUseCase {
       }
     }
 
-    // ── 1. Crear producto base ──
     const product = await this.productRepository.create({
       name: data.name,
       productType: data.productType,
@@ -48,41 +45,46 @@ export class CreateProductUseCase {
       statusId: data.statusId,
     });
 
-    // ── 2. Single con variantes (tallas/colores directos) ──
     if (data.productType === 'single' && data.variants?.length) {
-      for (const variant of data.variants) {
-        await this.productRepository.createVariantForProduct(product.id, {
-          sizeLabel: variant.sizeLabel,
-          color: variant.color,
-          price: variant.price,
-          stock: variant.stock,
-          sku: variant.sku,
-        });
-      }
+      await this.createSingleProductVariants(product.id, data.variants);
     }
 
-    // ── 3. Multiple: crear estilos + variantes por estilo ──
     if (data.productType === 'multiple' && data.styles) {
-      for (let i = 0; i < data.styles.length; i++) {
-        const styleDto = data.styles[i];
-        const style = await this.productRepository.createStyle(product.id, {
-          name: styleDto.name,
-          colorHex: styleDto.colorHex,
-          sortOrder: i,
-        });
-
-        for (const variantDto of styleDto.variants) {
-          await this.productRepository.createVariantForStyle(style.id, {
-            sizeLabel: variantDto.sizeLabel,
-            price: variantDto.price,
-            stock: variantDto.stock,
-            sku: variantDto.sku,
-          });
-        }
-      }
+      await this.createMultipleProductStyles(product.id, data.styles);
     }
 
-    // ── 4. Retornar producto completo ──
     return this.productRepository.findById(product.id);
+  }
+
+  private async createSingleProductVariants(productId: string, variants: any[]) {
+    for (const variant of variants) {
+      await this.productRepository.createVariantForProduct(productId, {
+        sizeLabel: variant.sizeLabel,
+        color: variant.color,
+        price: variant.price,
+        stock: variant.stock,
+        sku: variant.sku,
+      });
+    }
+  }
+
+  private async createMultipleProductStyles(productId: string, styles: any[]) {
+    for (let i = 0; i < styles.length; i++) {
+      const styleDto = styles[i];
+      const style = await this.productRepository.createStyle(productId, {
+        name: styleDto.name,
+        colorHex: styleDto.colorHex,
+        sortOrder: i,
+      });
+
+      for (const variantDto of styleDto.variants) {
+        await this.productRepository.createVariantForStyle(style.id, {
+          sizeLabel: variantDto.sizeLabel,
+          price: variantDto.price,
+          stock: variantDto.stock,
+          sku: variantDto.sku,
+        });
+      }
+    }
   }
 }

@@ -1,5 +1,4 @@
-import type { ProductType } from './product.entity.js';
-import type { Product } from './product.entity.js';
+import type { ProductType, Product } from './product.entity.js';
 import type { ProductImage } from './product-image.entity.js';
 import type { ProductVariant } from './product-variant.entity.js';
 import type { ProductStyle } from './product-style.entity.js';

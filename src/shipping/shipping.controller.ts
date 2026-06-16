@@ -44,7 +44,7 @@ export class ShippingController {
     const address = await this.addAddress.execute({
       userId: user.userId,
       ...dto,
-    } as Omit<ShippingAddress, 'id'>);
+    });
     return ApiResponse.created(address, 'Dirección registrada exitosamente');
   }
 

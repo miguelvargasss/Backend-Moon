@@ -38,7 +38,7 @@ export class SupabaseUserRepository implements IUserRepository {
       .eq('IdUser', id)
       .single();
 
-    if (error && error.code === 'PGRST116') return null;
+    if (error?.code === 'PGRST116') return null;
     if (error) throwSupabaseError(error);
     return this.toEntity(data);
   }
@@ -50,7 +50,7 @@ export class SupabaseUserRepository implements IUserRepository {
       .eq('email', email)
       .single();
 
-    if (error && error.code === 'PGRST116') return null;
+    if (error?.code === 'PGRST116') return null;
     if (error) throwSupabaseError(error);
     return this.toEntity(data);
   }

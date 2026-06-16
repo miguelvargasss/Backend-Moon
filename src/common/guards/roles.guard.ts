@@ -32,7 +32,7 @@ export class RolesGuard implements CanActivate {
     );
 
     // Si no se especificó @Roles(), permitir acceso
-    if (!requiredRoles || requiredRoles.length === 0) {
+    if (!requiredRoles?.length) {
       return true;
     }
 
@@ -56,7 +56,7 @@ export class RolesGuard implements CanActivate {
 
     const userRole = (data.role as any)?.nameRole;
 
-    if (!userRole || !requiredRoles.includes(userRole)) {
+    if (!requiredRoles.includes(userRole as any)) {
       throw new ForbiddenException(
         `Acceso denegado. Se requiere rol: ${requiredRoles.join(' o ')}`,
       );

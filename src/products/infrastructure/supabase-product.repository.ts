@@ -82,8 +82,8 @@ export class SupabaseProductRepository implements IProductRepository {
       data.IdProduct,
       data.NameProduct,
       data.product_type ?? 'single',
-      data.Price != null ? Number(data.Price) : null,
-      data.stock != null ? Number(data.stock) : null,
+      data.Price == null ? null : Number(data.Price),
+      data.stock == null ? null : Number(data.stock),
       data.sku ?? null,
       data.Description,
       data.Specification,
@@ -226,7 +226,7 @@ export class SupabaseProductRepository implements IProductRepository {
       .eq('IdProduct', id)
       .single();
 
-    if (error && error.code === 'PGRST116') return null;
+    if (error?.code === 'PGRST116') return null;
     if (error) throwSupabaseError(error);
 
     return this.loadFullProduct(data);
@@ -245,11 +245,11 @@ export class SupabaseProductRepository implements IProductRepository {
 
     const { data, error } = await query;
     if (error) throwSupabaseError(error);
-    if (!data || data.length === 0) return [];
+    if (!data?.length) return [];
 
     const productIds = data.map((d) => d.IdProduct);
 
-    // ── Batch: cargar TODO en paralelo (3 queries en vez de N*3) ──
+    // ── Batch: carga de relaciones en paralelo (3 queries en vez de N*3) ──
     const [allImagesRes, allVariantsRes, allStylesRes] = await Promise.all([
       this.supabase.adminClient
         .from('product_image')

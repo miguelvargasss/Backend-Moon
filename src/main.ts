@@ -65,7 +65,7 @@ if (!process.env.VERCEL) {
 }
 
 // Exportar para Vercel — CORS se maneja aquí directamente
-export default async (req: any, res: any) => {
+export default async function handler(req: any, res: any) {
   const origin: string | undefined = req.headers['origin'];
   const allowedOrigins = getAllowedOrigins();
 
@@ -93,4 +93,4 @@ export default async (req: any, res: any) => {
   const app = await bootstrap();
   const instance = app.getHttpAdapter().getInstance();
   instance(req, res);
-};
+}

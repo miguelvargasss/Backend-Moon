@@ -33,7 +33,7 @@ export class SupabaseCartRepository implements ICartRepository {
       .eq('IdUser', userId);
 
     if (error) throwSupabaseError(error);
-    if (!data || data.length === 0) return [];
+    if (!data?.length) return [];
 
     // Recopilar IDs únicos
     const productIds = [...new Set(data.map((d) => d.IdProduct))];

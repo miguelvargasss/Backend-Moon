@@ -39,7 +39,7 @@ export class SupabaseShippingRepository implements IShippingRepository {
       .select('*')
       .eq('IdShippingAddress', id)
       .single();
-    if (error && error.code === 'PGRST116') return null;
+    if (error?.code === 'PGRST116') return null;
     if (error) throwSupabaseError(error);
     return this.toEntity(data);
   }

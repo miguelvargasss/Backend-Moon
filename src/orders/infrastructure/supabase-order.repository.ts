@@ -65,7 +65,7 @@ export class SupabaseOrderRepository implements IOrderRepository {
       )
       .eq('IdOrder', id)
       .single();
-    if (error && error.code === 'PGRST116') return null;
+    if (error?.code === 'PGRST116') return null;
     if (error) throwSupabaseError(error);
 
     return this.toEntity(data);
