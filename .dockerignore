@@ -6,7 +6,6 @@ npm-debug.log
 .vercelignore
 .prettierrc
 eslint.config.mjs
-nest-cli.json
 README.md
 documentation.md
 diagram.md
